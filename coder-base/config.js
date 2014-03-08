@@ -1,18 +1,22 @@
 
 exports.listenIP = null; //Defaults to *
-exports.listenPort = 8081; //the SSL port things run on
-exports.httpListenPort = 8080; //this will all be redirected to SSL
 exports.cacheApps = true;
+
+exports.httpListenPort = 8080; //this will all be redirected to SSL
+exports.httpslistenPort = 8081; //the SSL port things run on
+
 exports.httpVisiblePort = 80; //forwarded http port the user sees
 exports.httpsVisiblePort = 443; //forwarded https port the user sees
 
 
 //SSL Info
-exports.country = "US";
-exports.state = "New York";
-exports.locale = "New York";
-exports.commonName = "coder.local";
-exports.subjectAltName = "DNS:192.168.0.1";
+exports.ssl = {}
+exports.ssl.enable = true
+exports.ssl.country = "US";
+exports.ssl.state = "New York";
+exports.ssl.locale = "New York";
+exports.ssl.commonName = "coder.local";
+exports.ssl.subjectAltName = "DNS:192.168.0.1";
 
 
 //Experimental

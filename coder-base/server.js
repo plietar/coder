@@ -77,7 +77,7 @@ var apphandler = function( req, res, appdir ) {
     var apppath = req.params[1];
     var modpath = appdir + appname;
     var userapp = loadApp( modpath + "/app" );
-    
+
 
     util.log( "GET: " + apppath + " " + appname );
 
@@ -86,8 +86,8 @@ var apphandler = function( req, res, appdir ) {
     auth = require(appdir + "auth" + "/app");
     user = auth.isAuthenticated(req, res);
     if ( !user && publicAllowed.indexOf( appname ) < 0) {
-        util.log( "redirect: " + "https://" + getHost(req) + ":" + config.httpsVisiblePort + '/app/auth' );
-        res.redirect("https://" + getHost(req) + ":" + config.httpsVisiblePort + '/app/auth' ); 
+        util.log( "redirect: " + '/app/auth' );
+        res.redirect('/app/auth');
         return;
     }
 
@@ -106,7 +106,7 @@ var apphandler = function( req, res, appdir ) {
     } else if ( req.route.method === 'post' ) {
         routes = userapp.post_routes;
     }
-        
+
     if ( routes ) {
         var found = false;
         for ( var i in routes ) {
@@ -118,7 +118,7 @@ var apphandler = function( req, res, appdir ) {
                     found = true;
                     break;
                 }
-                        
+
             } else if ( route['path'] === apppath ) {
                 userapp[route['handler']]( req, res );
                 found = true;
@@ -136,15 +136,11 @@ var apphandler = function( req, res, appdir ) {
     }
 };
 
-var startSSLRedirect = function() {
-    http.createServer( redirectapp ).listen( config.httpListenPort, config.listenIP );
-};
 
-var server;
-var startSSL = function() {
-
+var loadSslCert = function(callback) {
     privateKeyFile=path.normalize('certs/server.key');
     certificateFile=path.normalize('certs/server.cert');
+
     var privateKey="";
     var certificate="";
     try {
@@ -153,14 +149,12 @@ var startSSL = function() {
     } catch ( e ) {
         util.print( "no certificate found. generating self signed cert.\n" );
     }
-    
+
     if ( privateKey !== "" && certificate !== "" ) {
-        server = https.createServer({ key: privateKey, cert: certificate }, sslapp);
-	server.listen( config.listenPort, config.listenIP );
-        initSocketIO( server );
+        callback(privateKey, certificate);
     } else {
         var spawn = require('child_process').spawn;
-        
+
         var genSelfSignedCert = function(keyFile, certFile) {
             var genkey = spawn( 'openssl', [
                 'req', '-x509', '-nodes',
@@ -181,9 +175,8 @@ var startSSL = function() {
         var loadServer = function() {
             privateKey = fs.readFileSync(privateKeyFile).toString();
             certificate = fs.readFileSync(certificateFile).toString();
-            server = https.createServer({ key: privateKey, cert: certificate }, sslapp);
-            server.listen( config.listenPort, config.listenIP );
-            initSocketIO( server );
+
+            callback(privateKey, certificate);
         };
 
         genSelfSignedCert(privateKeyFile, certificateFile);
@@ -228,7 +221,7 @@ var initSocketIO = function( server ) {
         });
     });
 
-    
+
     var genRandomID = function() {
         var id = "";
         var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -245,7 +238,7 @@ var initSocketIO = function( server ) {
         var sess = socket.handshake.session;
 
         socket.socketID = genRandomID();
-	socketMap[socket.socketID] = socket;
+        socketMap[socket.socketID] = socket;
         socket.emit('SOCKETID', socket.socketID);
 
         socket.on('disconnect', function() {
@@ -259,9 +252,9 @@ var initSocketIO = function( server ) {
             if ( data.appid !== undefined && data.appid.match(/^\w+$/) && data.key !== undefined ) {
                 var appname = data.appid;
                 var userapp = loadApp( __dirname + '/apps/' + appname + "/app" );
-		var auth = require( __dirname + "/apps/auth/app" );
+                var auth = require( __dirname + "/apps/auth/app" );
                 applyAppSettings( userapp, appname, auth );
-        
+
                 var route;
                 var key = data.key;
                 var routes = userapp.socketio_routes;
@@ -276,7 +269,7 @@ var initSocketIO = function( server ) {
                                 found = true;
                                 break;
                             }
-                        
+
                         } else if ( route['key'] === key ) {
                             userapp[route['handler']]( socket, data.data );
                             found = true;
@@ -289,6 +282,7 @@ var initSocketIO = function( server ) {
         });
     });
 };
+
 // Allow front end console to receive server logs over a socket connection.
 // Note that util.log will still only go to stdout
 var origlog = console.log;
@@ -317,11 +311,11 @@ var pingStatusServer = function() {
     if ( typeof server === 'undefined' || server === "" || !pingEnabled ) {
         return;
     }
-        
+
     if ( typeof devicename === 'undefined' || devicename === "" ) {
         devicename = "Unconfigured Coder";
     }
-        
+
     var options = {
         host: server,
         port: '80',
@@ -369,43 +363,51 @@ var getHost = function( req ) {
     return host;
 };
 
-//HTTPS handles all normal traffic
-var sslapp = express();
-var storesecret = crypto.randomBytes(16).toString('utf-8');
-params.extend( sslapp );
-sslapp.sessionStore = new express.session.MemoryStore();
-sslapp.engine( 'html', cons.mustache );
-sslapp.set( 'view engine', 'html' );
-sslapp.set( 'views', __dirname + '/views' );
-sslapp.use( express.bodyParser() );
-sslapp.use( express.cookieParser() );
-sslapp.use( express.session({ 
-    secret: storesecret,
+var coderapp = express();
+params.extend( coderapp );
+coderapp.engine( 'html', cons.mustache );
+coderapp.set( 'view engine', 'html' );
+coderapp.set( 'views', __dirname + '/views' );
+coderapp.use( express.bodyParser() );
+coderapp.use( express.cookieParser() );
+coderapp.use( express.session({
     key: 'connect.sid',
-    store: sslapp.sessionStore
+    secret: crypto.randomBytes(16).toString('utf-8'),
+    store: new express.session.MemoryStore()
 }));
-sslapp.use( '/static', express.static( __dirname + '/static' ) );
-sslapp.get( '/', function( req, res ) {
+coderapp.use( '/static', express.static( __dirname + '/static' ) );
+coderapp.get( '/', function( req, res ) {
     util.log( 'GET: /' );
     res.redirect( '/app/auth' );
 });
-sslapp.all( /^\/app\/(\w+)\/(.*)$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
-sslapp.all( /^\/app\/(\w+)\/$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
-sslapp.all( /^\/app\/(\w+)$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
+coderapp.all( /^\/app\/(\w+)\/(.*)$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
+coderapp.all( /^\/app\/(\w+)\/$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
+coderapp.all( /^\/app\/(\w+)$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
 
+if (config.ssl.enable)
+{
+    //HTTP is all redirected to HTTPS
+    var redirectapp = express();
+    params.extend( redirectapp );
+    redirectapp.engine( 'html', cons.mustache );
+    redirectapp.all( /.*/, function( req, res ) {
+        util.log( 'redirect: ' + getHost(req) + ":" + config.httpsVisiblePort + " " + req.url );
+        res.redirect("https://" + getHost(req) + ":" + config.httpsVisiblePort  + req.url);
+    });
 
+    http.createServer(redirectapp).listen(config.httpListenPort, config.listenIP);
 
-//HTTP is all redirected to HTTPS
-var redirectapp = express();
-params.extend( redirectapp );
-redirectapp.engine( 'html', cons.mustache );
-redirectapp.all( /.*/, function( req, res ) {
-    util.log( 'redirect: ' + getHost(req) + ":" + config.httpsVisiblePort + " " + req.url );
-    res.redirect("https://" + getHost(req) + ":" + config.httpsVisiblePort  + req.url); 
-});
+    loadSslCert(function () {
+        var server = https.createServer({ key: privateKey, cert: certificate }, coderapp);
+        server.listen(config.httpsListenPort, config.listenIP);
+        initSocketIO(server);
+    });
+}
+else
+{
+    http.createServer(coderapp).listen(config.httpListenPort, config.listenIP);
+}
 
-startSSL();
-startSSLRedirect();
 pingStatusServer();
 
 process.on('uncaughtException', function(err) {
