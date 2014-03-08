@@ -185,6 +185,7 @@ var loadSslCert = function(callback) {
 };
 
 var io;
+var storesecret = crypto.randomBytes(16).toString('utf-8')
 var socketMap={};
 var initSocketIO = function( server ) {
     io = socketio.listen( server );
@@ -372,7 +373,7 @@ coderapp.use( express.bodyParser() );
 coderapp.use( express.cookieParser() );
 coderapp.use( express.session({
     key: 'connect.sid',
-    secret: crypto.randomBytes(16).toString('utf-8'),
+    secret: storesecret,
     store: new express.session.MemoryStore()
 }));
 coderapp.use( '/static', express.static( __dirname + '/static' ) );
