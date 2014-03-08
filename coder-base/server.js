@@ -36,7 +36,9 @@ var connect = require('connect');
 
 global.config = require('./config');
 
-var loadApp = function( loadpath ) {
+var loadApp = function( path, appname, auth ) {
+    var loadpath = path + appname + "/app";
+
     var userapp = null;
     if ( config.cacheApps ) {
         userapp = require(loadpath);
@@ -52,45 +54,35 @@ var loadApp = function( loadpath ) {
         }
         userapp = require(loadpath);
     }
-    return userapp;
-};
 
-var applyAppSettings = function( userapp, appname, auth ) {
-    userapp.settings.appname = appname;
-    userapp.settings.viewpath="apps/" + appname;
-    userapp.settings.appurl="/app/" + appname;
-    userapp.settings.staticurl = "/static/apps/" + appname;
-    userapp.settings.device_name = auth.getDeviceName();
-    userapp.settings.coder_owner = auth.getCoderOwner();
-    userapp.settings.coder_color = auth.getCoderColor();
-    if ( userapp.settings.device_name === "" ) {
-        userapp.settings.device_name = "Coder";
+    if (userapp)
+    {
+        userapp.settings.appname = appname;
+        userapp.settings.viewpath="apps/" + appname;
+        userapp.settings.appurl="/app/" + appname;
+        userapp.settings.staticurl = "/static/apps/" + appname;
+        userapp.settings.device_name = auth.getDeviceName();
+        userapp.settings.coder_owner = auth.getCoderOwner();
+        userapp.settings.coder_color = auth.getCoderColor();
+
+        if ( userapp.settings.device_name === "" ) {
+            userapp.settings.device_name = "Coder";
+        }
+        if ( userapp.settings.coder_color === "" ) {
+            userapp.settings.coder_color = "#3e3e3e";
+        }
     }
-    if ( userapp.settings.coder_color === "" ) {
-        userapp.settings.coder_color = "#3e3e3e";
-    }
-};
+
+    return userapp;
+}
 
 var apphandler = function( req, res, appdir ) {
 
     var appname = req.params[0];
     var apppath = req.params[1];
-    var modpath = appdir + appname;
-    var userapp = loadApp( modpath + "/app" );
 
-
-    util.log( "GET: " + apppath + " " + appname );
-
-    //Redirect to sign-in for unauthenticated users
-    publicAllowed = ["auth"]; //apps that are exempt from any login (should only be auth)
     auth = require(appdir + "auth" + "/app");
-    user = auth.isAuthenticated(req, res);
-    if ( !user && publicAllowed.indexOf( appname ) < 0) {
-        util.log( "redirect: " + '/app/auth' );
-        res.redirect('/app/auth');
-        return;
-    }
-
+    var userapp = loadApp( appdir, appname, auth );
 
     if ( !apppath ) {
         apppath = "/";  
@@ -98,7 +90,16 @@ var apphandler = function( req, res, appdir ) {
         apppath = "/" + apppath;        
     }
 
-    applyAppSettings( userapp, appname, auth );
+    util.log( "GET: " + apppath + " " + appname );
+
+    //Redirect to sign-in for unauthenticated users
+    publicAllowed = ["auth"]; //apps that are exempt from any login (should only be auth)
+    user = auth.isAuthenticated(req, res);
+    if ( !user && publicAllowed.indexOf( appname ) < 0) {
+        util.log( "redirect: " + '/app/auth' );
+        res.redirect('/app/auth');
+        return;
+    }
 
     var routes = [];
     if ( req.route.method === 'get' ) {
@@ -251,9 +252,8 @@ var initSocketIO = function( server ) {
             }
             if ( data.appid !== undefined && data.appid.match(/^\w+$/) && data.key !== undefined ) {
                 var appname = data.appid;
-                var userapp = loadApp( __dirname + '/apps/' + appname + "/app" );
                 var auth = require( __dirname + "/apps/auth/app" );
-                applyAppSettings( userapp, appname, auth );
+                var userapp = loadApp( __dirname + '/apps/', appname, auth );
 
                 var route;
                 var key = data.key;
