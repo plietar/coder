@@ -405,7 +405,9 @@ if (config.ssl.enable)
 }
 else
 {
-    http.createServer(coderapp).listen(config.httpListenPort, config.listenIP);
+    var server = http.createServer(coderapp);
+    server.listen(config.httpListenPort, config.listenIP);
+    initSocketIO(server);
 }
 
 pingStatusServer();
