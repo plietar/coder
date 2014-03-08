@@ -397,8 +397,8 @@ if (config.ssl.enable)
 
     http.createServer(redirectapp).listen(config.httpListenPort, config.listenIP);
 
-    loadSslCert(function () {
-        var server = https.createServer({ key: privateKey, cert: certificate }, coderapp);
+    loadSslCert(function (key, cert) {
+        var server = https.createServer({ key: key, cert: cert }, coderapp);
         server.listen(config.httpsListenPort, config.listenIP);
         initSocketIO(server);
     });
