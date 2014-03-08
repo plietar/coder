@@ -362,7 +362,7 @@ exports.api_addpassword_handler = function( req, res ) {
 
     //setpass.addListener( 'exit', function( code, signal ) {
     var completed = function( code, signal ) {
-      err = code;
+        err = code;
         
         
         if ( err ) {
@@ -440,16 +440,17 @@ exports.api_changepassword_handler = function( req, res ) {
     //device_settings.device_name = devicename;
     var erroutput = "";
     var output = "";
-    var setpipass = process.cwd() + '/sudo_scripts/setpipass';
-    var setpass = spawn( '/usr/bin/sudo', [setpipass] );
-    setpass.stdout.on( 'data', function( d ) {
-        output += d;
-    });
-    setpass.stderr.on( 'data', function( d ) {
-        erroutput += d;
-    });
+    //var setpipass = process.cwd() + '/sudo_scripts/setpipass';
+    //var setpass = spawn( '/usr/bin/sudo', [setpipass] );
+    //setpass.stdout.on( 'data', function( d ) {
+    //    output += d;
+    //});
+    //setpass.stderr.on( 'data', function( d ) {
+    //    erroutput += d;
+    //});
 
-    setpass.addListener( 'exit', function( code, signal ) {
+    //setpass.addListener( 'exit', function( code, signal ) {
+    var completed = function( code, signal ) {
         err = code;
         
         
@@ -479,11 +480,13 @@ exports.api_changepassword_handler = function( req, res ) {
             });
         }
         
-    });
-    setpass.stdin.write(pass + '\n');
-    setpass.stdin.write(pass + '\n');
-    setpass.stdin.end();
+    };
 
+    completed();
+
+    //setpass.stdin.write(pass + '\n');
+    //setpass.stdin.write(pass + '\n');
+    //setpass.stdin.end();
 };
 
 
