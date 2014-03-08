@@ -26,12 +26,13 @@ var http = require('http');
 var https = require('https');
 var crypto = require('crypto');
 var path = require('path');
-var config = require('./config');
 var fs = require('fs');
 var util = require('util');
 var cons = require('consolidate');
 var params = require('express-params');
 var querystring = require('querystring');
+
+global.config = require('./config');
 
 var loadApp = function( loadpath ) {
 

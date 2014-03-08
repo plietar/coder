@@ -26,19 +26,17 @@ var http = require('http');
 var https = require('https');
 var crypto = require('crypto');
 var path = require('path');
-var config = require('./config');
 var fs = require('fs');
 var util = require('util');
 var cons = require('consolidate');
 var params = require('express-params');
 var querystring = require('querystring');
-var path = require('path');
 var cookie = require('cookie');
 var connect = require('connect');
 
+global.config = require('./config');
 
 var loadApp = function( loadpath ) {
-
     var userapp = null;
     if ( config.cacheApps ) {
         userapp = require(loadpath);
