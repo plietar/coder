@@ -184,42 +184,34 @@ var loadSslCert = function(callback) {
     }
 };
 
+var storeSecret = crypto.randomBytes(16).toString('utf-8');
+var sessionStore = new express.session.MemoryStore();
+
 var io;
-var storesecret = crypto.randomBytes(16).toString('utf-8')
 var socketMap={};
 var initSocketIO = function( server ) {
     io = socketio.listen( server );
+    var sioCookieParser = express.cookieParser(storeSecret);
+
     io.set('log level', 1); //TODO: hack to fix recursion problem since we are piping log info to a socket
 
-    // sync session data with socket
-    // via https://github.com/DanielBaulig/sioe-demo/blob/master/app.js
     io.set('authorization', function (handshake, accept) {
-        if (!handshake.headers.cookie) {
-            console.log('no cookie sent with socket connection');
-            return accept('No cookie transmitted.', false);
-        }
-
-        handshake.cookie = cookie.parse(handshake.headers.cookie);
-        handshake.sessionID = connect.utils.parseSignedCookie(handshake.cookie['connect.sid'], storesecret);
-
-        if (handshake.cookie['connect.sid'] == handshake.sessionID) {
-            return accept('Cookie is invalid', false );
-        }
-
-        handshake.sessionStore = sslapp.sessionStore;
-
-        if (!handshake.sessionID) {
-            return accept('Session cookie could not be found', false);
-        }
-
-        handshake.sessionStore.get(handshake.sessionID, function (err, session) {
+        sioCookieParser(handshake, {}, function(err) {
             if (err) {
-                console.log( 'error loading session' );
-                return accept('Error', false);
+                accept(err, false);
             }
-
-            var s = handshake.session = new express.session.Session(handshake, session );
-            return accept(null, true);
+            else {
+                sessionStore.get(handshake.signedCookies["connect.sid"], function(err, sessionData) {
+                    if (err || !sessionData) {
+                        accept('Session error', false);
+                    }
+                    else {
+                        handshake.sessionStore = sessionStore;
+                        handshake.session = new express.session.Session(handshake, sessionData);
+                        accept(null, true);
+                    }
+                });
+            }
         });
     });
 
@@ -237,7 +229,7 @@ var initSocketIO = function( server ) {
 
     io.sockets.on('connection', function (socket) {
 
-        var sess = socket.handshake.session;
+        socket.session = socket.handshake.session;
 
         socket.socketID = genRandomID();
         socketMap[socket.socketID] = socket;
@@ -248,7 +240,7 @@ var initSocketIO = function( server ) {
         });
 
         socket.on('appdata', function(data) {
-            if ( !sess.authenticated ) {
+            if ( !socket.session.authenticated ) {
                 return;
             }
             if ( data.appid !== undefined && data.appid.match(/^\w+$/) && data.key !== undefined ) {
@@ -294,7 +286,7 @@ console.log = function(d) {
         var clients = io.sockets.clients();
         for ( var x=0; x<clients.length; x++ ) {
             var c = clients[x];
-            var sess = c.handshake.session;
+            var sess = c.session;
             if ( sess.authenticated ) {
                 c.emit('SERVERLOG', d);
             }
@@ -373,8 +365,8 @@ coderapp.use( express.bodyParser() );
 coderapp.use( express.cookieParser() );
 coderapp.use( express.session({
     key: 'connect.sid',
-    secret: storesecret,
-    store: new express.session.MemoryStore()
+    secret: storeSecret,
+    store: sessionStore
 }));
 coderapp.use( '/static', express.static( __dirname + '/static' ) );
 coderapp.get( '/', function( req, res ) {
