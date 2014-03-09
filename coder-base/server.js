@@ -35,6 +35,7 @@ var cookie = require('cookie');
 var connect = require('connect');
 
 global.config = require('./config');
+global.coderlib = require('./apps/coderlib/app');
 
 var loadApp = function( path, appname, auth ) {
     var loadpath = path + appname + "/app";
