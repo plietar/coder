@@ -114,3 +114,85 @@ var getDateString = function( d ) {
     };
     return d.getFullYear() + "-" + twodigits(d.getMonth()+1) + '-' + twodigits(d.getDate());
 };
+
+var appdir = process.cwd() + "/apps/";
+
+exports.app = function(name, callback) {
+    var metafile = appdir + name + "/meta.json";
+    var loadpath = appdir + name + "/app"
+
+        userapp = {
+            created: getDateString( new Date() ),
+            modified: getDateString( new Date() ),
+            color: "#1abc9c",
+            author: "Coder",
+            name: name,
+            hidden: false
+        };
+
+
+    userapp.load = function(callback) {
+        fs.readFile(metafile, { encoding: "utf-8" }, function(err, data) {
+            if (err) {
+                if (callback) callback(err);
+                return;
+            }
+
+            try {
+                var metadata = JSON.parse(data);
+                for (attr in userapp) {
+                    if (typeof userapp[attr] !== 'function' && typeof metadata[attr] !== 'undefined') {
+                        userapp[attr] = metadata[attr];
+                    }
+                }
+            } catch (e) {
+            }
+
+            if (callback) callback(null);
+        });
+    }
+
+    userapp.save = function(callback) {
+        var data = JSON.stringify(userapp);
+
+        fs.writeFile(metafile, data, { encoding: "utf-8" }, function (err) {
+            if (callback) callback(err);
+        });
+    };
+
+
+    userapp.require = function() {
+        app = require(loadpath);
+        app.settings = {}
+
+        app.settings.appname = name;
+        app.settings.path = appdir + name;
+        app.settings.viewpath = "apps/" + name;
+        app.settings.appurl = "/app/" + name;
+        app.settings.staticurl = "/static/apps/" + name;
+
+        return app;
+    }
+
+    userapp.invalidate = function() {
+        var cached = require.cache[loadpath + '.js'];
+        if ( cached ) {
+            theapp = require(loadpath);
+            if ( theapp.on_destroy ) {
+                theapp.on_destroy();
+            }
+            delete require.cache[loadpath + ".js"];
+        }
+    }
+
+
+    userapp.load(function(err) {
+        if (callback) {
+            if (err)
+        callback(err, null);
+            else
+        callback(null, userapp);
+        }
+    });
+}
+

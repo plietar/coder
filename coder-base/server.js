@@ -37,53 +37,9 @@ var connect = require('connect');
 global.config = require('./config');
 global.coderlib = require('./apps/coderlib/app');
 
-var loadApp = function( path, appname, auth ) {
-    var loadpath = path + appname + "/app";
-
-    var userapp = null;
-    if ( config.cacheApps ) {
-        userapp = require(loadpath);
-    } else {
-
-        var cached = require.cache[loadpath + '.js'];
-        if ( cached ) {
-            userapp = require(loadpath);
-            if ( userapp.on_destroy ) {
-                userapp.on_destroy();
-            }
-            delete require.cache[loadpath + ".js"];
-        }
-        userapp = require(loadpath);
-    }
-
-    if (userapp)
-    {
-        userapp.settings.appname = appname;
-        userapp.settings.viewpath="apps/" + appname;
-        userapp.settings.appurl="/app/" + appname;
-        userapp.settings.staticurl = "/static/apps/" + appname;
-        userapp.settings.device_name = auth.getDeviceName();
-        userapp.settings.coder_owner = auth.getCoderOwner();
-        userapp.settings.coder_color = auth.getCoderColor();
-
-        if ( userapp.settings.device_name === "" ) {
-            userapp.settings.device_name = "Coder";
-        }
-        if ( userapp.settings.coder_color === "" ) {
-            userapp.settings.coder_color = "#3e3e3e";
-        }
-    }
-
-    return userapp;
-}
-
 var apphandler = function( req, res, appdir ) {
-
     var appname = req.params[0];
     var apppath = req.params[1];
-
-    auth = require(appdir + "auth" + "/app");
-    var userapp = loadApp( appdir, appname, auth );
 
     if ( !apppath ) {
         apppath = "/";  
@@ -91,51 +47,63 @@ var apphandler = function( req, res, appdir ) {
         apppath = "/" + apppath;        
     }
 
-    util.log( "GET: " + apppath + " " + appname );
+    util.log( req.route.method + ": " + apppath + " " + appname );
 
-    //Redirect to sign-in for unauthenticated users
-    publicAllowed = ["auth"]; //apps that are exempt from any login (should only be auth)
-    user = auth.isAuthenticated(req, res);
-    if ( !user && publicAllowed.indexOf( appname ) < 0) {
-        util.log( "redirect: " + '/app/auth' );
-        res.redirect('/app/auth');
-        return;
-    }
-
-    var routes = [];
-    if ( req.route.method === 'get' ) {
-        routes = userapp.get_routes;
-    } else if ( req.route.method === 'post' ) {
-        routes = userapp.post_routes;
-    }
-
-    if ( routes ) {
-        var found = false;
-        for ( var i in routes ) {
-            route = routes[i];
-            if ( route['path'] instanceof RegExp ) {
-                var m = route['path'].exec( apppath );
-                if ( m ) {      
-                    userapp[route['handler']]( req, res, m );
-                    found = true;
-                    break;
-                }
-
-            } else if ( route['path'] === apppath ) {
-                userapp[route['handler']]( req, res );
-                found = true;
-                break;
-            }       
-
-        }
-
-        if ( !found ) {
+    auth = require(appdir + "auth" + "/app");
+    coderlib.app(appname, function(err, metadata) {
+        if (err) {
             res.status( 404 );
             res.render('404', {
                 title: 'error'
             });
+            return;
         }
-    }
+        userapp = metadata.require()
+
+        //Redirect to sign-in for unauthenticated users
+        publicAllowed = ["auth"]; //apps that are exempt from any login (should only be auth)
+        user = auth.isAuthenticated(req, res);
+        if ( !user && publicAllowed.indexOf( appname ) < 0) {
+            util.log( "redirect: " + '/app/auth' );
+            res.redirect('/app/auth');
+            return;
+        }
+
+        var routes = [];
+        if ( req.route.method === 'get' ) {
+            routes = userapp.get_routes;
+        } else if ( req.route.method === 'post' ) {
+            routes = userapp.post_routes;
+        }
+
+        if ( routes ) {
+            var found = false;
+            for ( var i in routes ) {
+                route = routes[i];
+                if ( route['path'] instanceof RegExp ) {
+                    var m = route['path'].exec( apppath );
+                    if ( m ) {
+                        userapp[route['handler']]( req, res, m );
+                        found = true;
+                        break;
+                    }
+
+                } else if ( route['path'] === apppath ) {
+                    userapp[route['handler']]( req, res );
+                    found = true;
+                    break;
+                }
+
+            }
+
+            if ( !found ) {
+                res.status( 404 );
+                res.render('404', {
+                    title: 'error'
+                });
+            }
+        }
+    });
 };
 
 
@@ -159,14 +127,14 @@ var loadSslCert = function(callback) {
 
         var genSelfSignedCert = function(keyFile, certFile) {
             var genkey = spawn( 'openssl', [
-                'req', '-x509', '-nodes',
-                '-days', '365',
-                '-newkey', 'rsa:2048',
-                '-keyout', keyFile,
-                '-out', certFile,
-                '-subj',
-                '/C=' + config.country + '/ST=' + config.state + "/L=" + config.locale + "/CN=" + config.commonName + "/subjectAltName=" + config.subjectAltName
-            ]);
+                    'req', '-x509', '-nodes',
+                    '-days', '365',
+                    '-newkey', 'rsa:2048',
+                    '-keyout', keyFile,
+                    '-out', certFile,
+                    '-subj',
+                    '/C=' + config.country + '/ST=' + config.state + "/L=" + config.locale + "/CN=" + config.commonName + "/subjectAltName=" + config.subjectAltName
+                    ]);
             genkey.stdout.on('data', function(d) { util.print(d) } );
             genkey.stderr.on('data', function(d) { util.print(d) } );
             genkey.addListener( 'exit', function( code, signal ) {
@@ -247,31 +215,37 @@ var initSocketIO = function( server ) {
             if ( data.appid !== undefined && data.appid.match(/^\w+$/) && data.key !== undefined ) {
                 var appname = data.appid;
                 var auth = require( __dirname + "/apps/auth/app" );
-                var userapp = loadApp( __dirname + '/apps/', appname, auth );
 
-                var route;
-                var key = data.key;
-                var routes = userapp.socketio_routes;
-                if ( routes ) {
-                    var found = false;
-                    for ( var i in routes ) {
-                        route = routes[i];
-                        if ( route['key'] instanceof RegExp ) {
-                            var m = route['path'].exec( key );
-                            if ( m ) {      
-                                userapp[route['handler']]( socket, data.data, m );
+                coderlib.app(appname, function(err, metadata) {
+                    if (err) {
+                        return;
+                    }
+                    userapp = metadata.require()
+
+                    var route;
+                    var key = data.key;
+                    var routes = userapp.socketio_routes;
+                    if ( routes ) {
+                        var found = false;
+                        for ( var i in routes ) {
+                            route = routes[i];
+                            if ( route['key'] instanceof RegExp ) {
+                                var m = route['path'].exec( key );
+                                if ( m ) {      
+                                    userapp[route['handler']]( socket, data.data, m );
+                                    found = true;
+                                    break;
+                                }
+
+                            } else if ( route['key'] === key ) {
+                                userapp[route['handler']]( socket, data.data );
                                 found = true;
                                 break;
-                            }
+                            }       
 
-                        } else if ( route['key'] === key ) {
-                            userapp[route['handler']]( socket, data.data );
-                            found = true;
-                            break;
-                        }       
-
+                        }
                     }
-                }
+                });
             }
         });
     });
@@ -330,8 +304,8 @@ var pingStatusServer = function() {
         postsocket.on('connect', function( postconnection ) {
             var data = {
                 ip: postreq.socket.address().address,
-                coder_name: devicename,
-                network: ''
+            coder_name: devicename,
+            network: ''
             };
             var postdata = querystring.stringify( data );
             postreq.setHeader( 'Content-Length', postdata.length );
