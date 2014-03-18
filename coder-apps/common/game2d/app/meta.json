@@ -4,5 +4,6 @@
     "color": "#3e3e3e",
     "author": "Justin Windle",
     "name": "Game2D",
-    "hidden": true
+    "hidden": true,
+    "public": false
 }

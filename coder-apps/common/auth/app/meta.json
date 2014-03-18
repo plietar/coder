@@ -4,5 +4,6 @@
     "color": "#1abc9c",
     "author": "Jason Striegel",
     "name": "Auth",
-    "hidden": true
+    "hidden": true,
+    "public": true
 }

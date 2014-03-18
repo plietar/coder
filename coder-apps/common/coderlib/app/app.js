@@ -80,7 +80,8 @@ exports.app = function(name, callback) {
           color: "#1abc9c",
           author: "Coder",
           name: name,
-          hidden: false
+          hidden: false,
+          public: false
         },
 
         load: function(callback) {

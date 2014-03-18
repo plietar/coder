@@ -4,5 +4,6 @@
     "color": "#d977d4",
     "author": "Jason Striegel",
     "name": "Hello Coder",
-    "hidden": false
+    "hidden": false,
+    "public": false    
 }

@@ -4,5 +4,6 @@
     "color": "#3498d8",
     "author": "Justin Windle",
     "name": "Space Rocks!",
-    "hidden": false
+    "hidden": false,
+    "public": false    
 }

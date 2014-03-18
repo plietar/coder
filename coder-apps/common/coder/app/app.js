@@ -129,6 +129,7 @@ exports.api_app_create_handler = function( app, req, res ) {
         author: coderlib.device.owner,
         name: apptitle,
         hidden: false,
+        public: false
     };
     var metapath = process.cwd() + '/apps/' + newappid + '/meta.json';
     fs.writeFileSync(  metapath, JSON.stringify(metainfo, null, 4), 'utf8' );

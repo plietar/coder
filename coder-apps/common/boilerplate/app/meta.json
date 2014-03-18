@@ -4,5 +4,6 @@
     "color": "#3e3e3e",
     "author": "Jason Striegel",
     "name": "Boilerplate",
-    "hidden": true
+    "hidden": true,
+    "public": false
 }

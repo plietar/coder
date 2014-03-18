@@ -61,9 +61,9 @@ var apphandler = function( req, res, appdir ) {
         userapp = app.require()
 
         //Redirect to sign-in for unauthenticated users
-        publicAllowed = ["auth"]; //apps that are exempt from any login (should only be auth)
         user = auth.isAuthenticated(req, res);
-        if ( !user && publicAllowed.indexOf( appname ) < 0) {
+        console.log(app.metadata)
+        if ( !user && !app.metadata.public) {
             util.log( "redirect: " + '/app/auth' );
             res.redirect('/app/auth');
             return;

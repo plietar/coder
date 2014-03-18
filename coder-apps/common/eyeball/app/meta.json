@@ -4,5 +4,6 @@
     "color": "#f39c12",
     "author": "Justin Windle",
     "name": "Eyeball",
-    "hidden": false
+    "hidden": false,
+    "public": false
 }

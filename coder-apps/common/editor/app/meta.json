@@ -4,5 +4,6 @@
     "color": "#80d4ea",
     "author": "Jason Striegel",
     "name": "Editor",
-    "hidden": true
+    "hidden": true,
+    "public": false    
 }
