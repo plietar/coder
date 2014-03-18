@@ -91,7 +91,7 @@ exports.logout = function( req ) {
 };
 
 
-exports.index_handler = function( req, res ) {
+exports.index_handler = function( app, req, res ) {
     
     var firstuse = "?firstuse";
     if ( typeof( req.param('firstuse') ) === 'undefined' ) {
@@ -109,7 +109,7 @@ exports.index_handler = function( req, res ) {
     }
 };
 
-exports.addpassword_handler = function( req, res ) {
+exports.addpassword_handler = function( app, req, res ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -125,7 +125,7 @@ exports.addpassword_handler = function( req, res ) {
     }
 };
 
-exports.changepassword_handler = function( req, res ) {
+exports.changepassword_handler = function( app, req, res ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -141,7 +141,7 @@ exports.changepassword_handler = function( req, res ) {
     }
 };
 
-exports.configure_handler = function( req, res ) {
+exports.configure_handler = function( app, req, res ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -157,7 +157,7 @@ exports.configure_handler = function( req, res ) {
     }
 };
 
-exports.api_addpassword_handler = function( req, res ) {
+exports.api_addpassword_handler = function( app, req, res ) {
 
     //only allow this step if they have not yet set a password
     if ( exports.hasPassword() ) {
@@ -233,7 +233,7 @@ exports.api_addpassword_handler = function( req, res ) {
 
 
 
-exports.api_changepassword_handler = function( req, res ) {
+exports.api_changepassword_handler = function( app, req, res ) {
 
     //only allow this step if they are authenticated
     if ( !exports.isAuthenticated(req) ) {
@@ -320,7 +320,7 @@ exports.api_changepassword_handler = function( req, res ) {
 };
 
 
-exports.login_handler = function( req, res ) {
+exports.login_handler = function( app, req, res ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -334,7 +334,7 @@ exports.login_handler = function( req, res ) {
     res.render( exports.settings.viewpath + '/index', tmplvars );
 };
 
-exports.logout_handler = function( req, res ) {
+exports.logout_handler = function( app, req, res ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -346,7 +346,7 @@ exports.logout_handler = function( req, res ) {
     res.render( exports.settings.viewpath + '/index', tmplvars );
 };
 
-exports.api_login_handler = function( req, res ) {
+exports.api_login_handler = function( app, req, res ) {
     if ( typeof req.body.password !== 'undefined' && req.body.password !== "" ) {
         var authenticated = exports.authenticate( req, req.body.password );
         if ( authenticated === true ) {
@@ -360,7 +360,7 @@ exports.api_login_handler = function( req, res ) {
     } );
 };
 
-exports.api_logout_handler = function( req, res ) {
+exports.api_logout_handler = function( app, req, res ) {
     req.session.authenticated = false;
 
     res.json( { status: 'success'} );

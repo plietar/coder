@@ -52,7 +52,7 @@ exports.post_routes = [
 exports.on_destroy = function() {
 };
 
-exports.index_handler = function( req, res ) {
+exports.index_handler = function( app, req, res ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -94,7 +94,7 @@ var getAvailableNewAppID = function( newappid ) {
     return newappid;
 };
 
-exports.api_app_create_handler = function( req, res ) {
+exports.api_app_create_handler = function( app, req, res ) {
 
     var apptitle = req.param('app_title');
     var appcolor = req.param('app_color');
@@ -140,7 +140,7 @@ exports.api_app_create_handler = function( req, res ) {
 
 };
 
-exports.export_download_handler = function( req, res, pathmatches ) {
+exports.export_download_handler = function( app, req, res, pathmatches ) {
 
     var exportname = "export.zip";
     if ( pathmatches && pathmatches[1] !== "" ) {
@@ -169,7 +169,7 @@ exports.export_download_handler = function( req, res, pathmatches ) {
 };
 
 
-exports.api_app_import_handler = function( req, res, pathmatches ) {
+exports.api_app_import_handler = function( app, req, res, pathmatches ) {
 
     if ( !req.files || !req.files['import_file'] ) {
         res.json({
@@ -304,7 +304,7 @@ exports.api_app_import_handler = function( req, res, pathmatches ) {
 
 };
 
-exports.api_app_export_handler = function( req, res, pathmatches ) {
+exports.api_app_export_handler = function( app, req, res, pathmatches ) {
 	
     var apptoexport = "";
     if ( pathmatches && pathmatches[1] !== "" ) {
@@ -392,7 +392,7 @@ exports.api_app_export_handler = function( req, res, pathmatches ) {
 
 };
 
-exports.api_app_remove_handler = function( req, res, pathmatches ) {
+exports.api_app_remove_handler = function( app, req, res, pathmatches ) {
     var apptoremove = "";
     if ( pathmatches && pathmatches[1] !== "" ) {
         apptoremove = pathmatches[1];

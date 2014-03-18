@@ -224,7 +224,7 @@ exports.device = function() {
     return device;
 }();
 
-exports.api_app_list_handler = function( req, res ) {
+exports.api_app_list_handler = function( app, req, res ) {
     exports.listApps(function(err, results) {
       if (err) {
         res.send(500);
@@ -243,15 +243,15 @@ exports.api_app_list_handler = function( req, res ) {
     });
 };
 
-exports.api_get_device_name = function(req, res) {
+exports.api_get_device_name = function(app, req, res) {
   res.json({ name: exports.device.name });
 }
 
-exports.api_get_device_color = function(req, res) {
+exports.api_get_device_color = function(app, req, res) {
   res.json({ color: exports.device.color });
 }
 
-exports.api_get_device_owner = function(req, res) {
+exports.api_get_device_owner = function(app, req, res) {
   res.json({ owner: exports.device.owner });
 }
 
@@ -278,7 +278,7 @@ var isValidDeviceName = function( name ) {
     return true;
 };
 
-exports.api_set_device_name = function(req, res) {
+exports.api_set_device_name = function(app, req, res) {
   if (isValidDeviceName(req.body.name))
   {
     exports.device.name = req.body.name;
@@ -306,7 +306,7 @@ var isValidColor = function( color ) {
     return true;
 }
 
-exports.api_set_device_color = function(req, res) {
+exports.api_set_device_color = function(app, req, res) {
   if (isValidColor(req.body.color))
   {
     exports.device.color = req.body.color;
@@ -321,7 +321,7 @@ exports.api_set_device_color = function(req, res) {
     res.json({ status: 'error', error: '' });
 }
 
-exports.api_set_device_owner = function(req, res) {
+exports.api_set_device_owner = function(app, req, res) {
   if (req.body.owner)
   {
     exports.device.owner = req.body.owner;

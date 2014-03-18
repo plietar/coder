@@ -48,7 +48,7 @@ exports.post_routes = [
 
 
 
-exports.index_handler = function( req, res, pathmatches ) {
+exports.index_handler = function( app, req, res, pathmatches ) {
     var tmplvars = {};
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
@@ -68,7 +68,7 @@ exports.index_handler = function( req, res, pathmatches ) {
 };
 
 
-exports.api_metadata_get_handler = function( req, res, pathmatches ) {
+exports.api_metadata_get_handler = function( app, req, res, pathmatches ) {
     var apptoedit = "";
     if ( pathmatches && pathmatches[1] != "" ) {
         apptoedit = pathmatches[1];
@@ -83,7 +83,7 @@ exports.api_metadata_get_handler = function( req, res, pathmatches ) {
     });
 };
 
-exports.api_getcode_handler = function( req, res, pathmatches ) {
+exports.api_getcode_handler = function( app, req, res, pathmatches ) {
 
     var path = process.cwd(); //root application path. different from __dirname
     var apptoedit = "";
@@ -103,13 +103,13 @@ exports.api_getcode_handler = function( req, res, pathmatches ) {
     res.json( outdata );
 };
 
-exports.api_media_list_handler = function( req, res, pathmatches ) {
+exports.api_media_list_handler = function( app, req, res, pathmatches ) {
     media = exports.listMedia( pathmatches[1] );
     res.json({ media: media });
 };
 
 
-exports.api_media_remove_handler = function( req, res ) {
+exports.api_media_remove_handler = function( app, req, res ) {
     
     var appname = req.param('appname');
     if ( !appname || appname === "" || !appname.match(/^(\w+)$/) ) {
@@ -133,7 +133,7 @@ exports.api_media_remove_handler = function( req, res ) {
     }
 };
 
-exports.api_media_upload_handler = function( req, res ) {
+exports.api_media_upload_handler = function( app, req, res ) {
     
     var appname = req.param('appname');
     if ( !appname || appname === "" || !appname.match(/^(\w+)$/) ) {
@@ -178,7 +178,7 @@ exports.api_media_upload_handler = function( req, res ) {
 };
 
 
-exports.api_savecode_handler = function( req, res, pathmatches ) {
+exports.api_savecode_handler = function( app, req, res, pathmatches ) {
     var path = process.cwd();
     var apptoedit = "";
     if ( pathmatches && pathmatches[1] != "" ) {
@@ -266,7 +266,7 @@ exports.api_savecode_handler = function( req, res, pathmatches ) {
 };
 
 
-exports.api_savesettings_handler = function( req, res, pathmatches ) {
+exports.api_savesettings_handler = function( app, req, res, pathmatches ) {
     var path = process.cwd();
     var apptoedit = "";
     if ( pathmatches && pathmatches[1] != "" ) {

@@ -50,7 +50,7 @@ var apphandler = function( req, res, appdir ) {
     util.log( req.route.method + ": " + apppath + " " + appname );
 
     auth = require(appdir + "auth" + "/app");
-    coderlib.app(appname, function(err, metadata) {
+    coderlib.app(appname, function(err, app) {
         if (err) {
             res.status( 404 );
             res.render('404', {
@@ -58,7 +58,7 @@ var apphandler = function( req, res, appdir ) {
             });
             return;
         }
-        userapp = metadata.require()
+        userapp = app.require()
 
         //Redirect to sign-in for unauthenticated users
         publicAllowed = ["auth"]; //apps that are exempt from any login (should only be auth)
@@ -83,13 +83,13 @@ var apphandler = function( req, res, appdir ) {
                 if ( route['path'] instanceof RegExp ) {
                     var m = route['path'].exec( apppath );
                     if ( m ) {
-                        userapp[route['handler']]( req, res, m );
+                        userapp[route['handler']]( app, req, res, m );
                         found = true;
                         break;
                     }
 
                 } else if ( route['path'] === apppath ) {
-                    userapp[route['handler']]( req, res );
+                    userapp[route['handler']]( app, req, res );
                     found = true;
                     break;
                 }
@@ -216,11 +216,11 @@ var initSocketIO = function( server ) {
                 var appname = data.appid;
                 var auth = require( __dirname + "/apps/auth/app" );
 
-                coderlib.app(appname, function(err, metadata) {
+                coderlib.app(appname, function(err, app) {
                     if (err) {
                         return;
                     }
-                    userapp = metadata.require()
+                    userapp = app.require()
 
                     var route;
                     var key = data.key;
@@ -232,13 +232,13 @@ var initSocketIO = function( server ) {
                             if ( route['key'] instanceof RegExp ) {
                                 var m = route['path'].exec( key );
                                 if ( m ) {      
-                                    userapp[route['handler']]( socket, data.data, m );
+                                    userapp[route['handler']]( app, socket, data.data, m );
                                     found = true;
                                     break;
                                 }
 
                             } else if ( route['key'] === key ) {
-                                userapp[route['handler']]( socket, data.data );
+                                userapp[route['handler']]( app, socket, data.data );
                                 found = true;
                                 break;
                             }       
