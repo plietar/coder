@@ -169,10 +169,12 @@ exports.api_addpassword_handler = function( req, res ) {
     }
 
     var pass = req.param('password');
-    if ( !pass || pass === "" || !isValidPassword( pass ) ) {
+    var err = checkValidPassword(pass);
+
+    if ( err ) {
         res.json({
             status: 'error', 
-            error: getPasswordProblem( pass ) 
+            error: err
         });
         return;
     }
@@ -255,10 +257,12 @@ exports.api_changepassword_handler = function( req, res ) {
         return;
     }
 
-    if ( !pass || pass === "" || !isValidPassword( pass ) ) {
+    var err = checkValidPassword(pass);
+
+    if ( err ) {
         res.json({
             status: 'error', 
-            error: getPasswordProblem( pass ) 
+            error: err
         });
         return;
     }
@@ -363,38 +367,21 @@ exports.api_logout_handler = function( req, res ) {
     res.json( { status: 'success'} );
 };
 
-
-
-var getPasswordProblem = function( pass ) {
+var checkValidPassword = function( pass ) {
     if ( !pass || pass === '' ) {
         return "the password is empty";
     }
+
     if ( pass.length < 6 ) {
         return "the password should contain at least 6 characters";
     }
-    if ( !pass.match(/[a-z]/) || 
+
+    if ( !pass.match(/[a-z]/) ||
             !pass.match(/[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\].*[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\]/) ) {
         return "your password must contain a lower case letter and at least two upper case letters or numbers";
     }
-};
 
-var isValidPassword = function( pass ) {
-    if ( !pass || pass === '' ) {
-        return false;
-    }
-    //at least 6 characters
-    if ( pass.length < 6 ) {
-        return false;
-    }
-    //contains lower case
-    if ( !pass.match(/[a-z]/) ) {
-        return false;
-    }
-    //contains two upper case or numbers
-    if ( !pass.match(/[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\].*[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\]/) ) {
-        return false;
-    }
-    return true;
+    return null;
 };
 
 
