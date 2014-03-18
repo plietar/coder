@@ -18,8 +18,6 @@
  * limitations under the License.
  */
 
-var metadata;
-
 $(document).ready( function() {
 
     Coder.listApps( buildAppList );   
@@ -247,12 +245,12 @@ var saveSettings = function() {
             callback();
             return;
         }
-        $.post('/app/auth/api/devicename/set',
-            { 'device_name': $('#coder_name').val() },
+        $.post('/app/coderlib/api/device/name',
+            { 'name': $('#coder_name').val() },
             function(d) {
                 //console.log( d );
                 if ( d.status === 'success' ) {
-                    device_name = d.device_name;
+                    device_name = d.name;
                     $("#coder_logo").text( device_name );
                 }
                 callback();
@@ -265,12 +263,12 @@ var saveSettings = function() {
             callback();
             return;
         }
-        $.post('/app/auth/api/coderowner/set',
+        $.post('/app/coderlib/api/device/owner',
             { 'coder_owner': $('#coder_ownername').val() },
             function(d) {
                 //console.log( d );
                 if ( d.status === 'success' ) {
-                    coder_owner = d.coder_owner;
+                    coder_owner = d.owner;
                 }
                 callback();
             }
@@ -290,12 +288,12 @@ var saveSettings = function() {
         var hexcolor = rgb2hex($selectedcolor.css('background-color'));
         
         
-        $.post('/app/auth/api/codercolor/set',
+        $.post('/app/coderlib/api/device/color',
             { 'coder_color': hexcolor },
             function(d) {
                 //console.log( d );
                 if ( d.status === 'success' ) {
-                    coder_color = d.coder_color;
+                    coder_color = d.color;
                     $("#coder_nav").css('background-color', coder_color);
                 }
                 callback();
@@ -317,8 +315,8 @@ var buildAppList = function(apps){
     
     
     //get the app color from our own app (appname is set globally in template)
-    metadata = apps[appname].metadata;
-    $('.userbgcolor').css('background-color', metadata.color);
+    //metadata = apps[appname];
+    //$('.userbgcolor').css('background-color', metadata.color);
 
     var $apptmpl = $('#appitem_template').clone();
     $apptmpl.attr('id', '').css('display','');
@@ -358,18 +356,12 @@ var buildAppList = function(apps){
     for ( var x=0; x<sortedapps.length; x++ ) {
         var app = sortedapps[x];
         
-        //don't show hidden apps
-        //console.log( app.metadata );
-        if ( app.metadata.hidden ) {
-            continue;
-        }
-        
         var $a = $apptmpl.clone();
         $a.find('.appname').text( app.appname );
-        if ( app.metadata.name && app.metadata.name !== "" ) {
-            $a.find('.appname').text( app.metadata.name );
+        if ( app.name && app.name !== "" ) {
+            $a.find('.appname').text( app.name );
         }
-        $a.css('background-color', app.metadata.color);
+        $a.css('background-color', app.color);
         
         $a.hover(
             function() {
@@ -452,3 +444,4 @@ function rgb2hex(rgb) {
     }
     return "#" + hex(rgbmatch[1]) + hex(rgbmatch[2]) + hex(rgbmatch[3]);
 }
+

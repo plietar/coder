@@ -21,6 +21,7 @@
 var mustache = require('mustache');
 var util = require('util');
 var fs = require('fs');
+var async = require('async');
 
 exports.settings={};
 //These are dynamically updated by the runtime
@@ -30,82 +31,23 @@ exports.settings={};
 //settings.appurl - base url path to this app /app/appname
 
 exports.get_routes = [
-    { path:'/', handler:'index_handler'},
-    { path: '/api/app/list', handler: 'api_app_list_handler' }
+    { path: '/api/app/list', handler: 'api_app_list_handler' },
+
+    { path: '/api/device/name',  handler: 'api_get_device_name' },
+    { path: '/api/device/owner', handler: 'api_get_device_owner' },
+    { path: '/api/device/color', handler: 'api_get_device_color' }
 ];
 
 
 exports.post_routes = [
-    { path: '/api/data/get', handler: 'api_data_get_handler' },
-    { path: '/api/data/set', handler: 'api_data_set_handler' },
+    { path: '/api/device/name',  handler: 'api_set_device_name' },
+    { path: '/api/device/owner', handler: 'api_set_device_owner' },
+    { path: '/api/device/color', handler: 'api_set_device_color' }
 ];
 
 exports.on_destroy = function() {
 };
 
-exports.api_app_list_handler = function( req, res ) {
-    apps = exports.listApps();
-    res.json({ apps: apps });
-};
-
-exports.api_reboot_handler = function( req, res ) {
-    var spawn = require('child_process').spawn;
-    var rebootproc = spawn( '/sbin/shutdown', ['-r', 'now'] );
-    rebootproc.addListener( 'exit', function( code, signal ) {
-        res.json( { status: 'success' } );
-    });        
-};
-
-exports.index_handler = function( req, res ) {
-    var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-
-    res.render( exports.settings.viewpath + '/index', tmplvars );
-};
-
-exports.listApps = function() {
-    var path = process.cwd(); //root application path. different from __dirname
-    var appdir = path + "/apps/";
-    var apps = {};
-    var files = fs.readdirSync(appdir);
-    for ( var x in files ) {
-        var filename = files[x];
-        var info = fs.statSync( appdir + filename );
-        if ( info.isDirectory() ) {
-            var appinfo = null;
-            var metastat = null;
-            try {
-                appinfo = fs.statSync( appdir + filename + "/app.js" );
-                metastat = fs.statSync( appdir + filename + "/meta.json" );
-            } catch ( e ) {
-            }
-            if ( typeof appinfo !== 'undefined' && appinfo && appinfo.isFile() ) {
-                var metainfo = {
-                    created: getDateString( new Date() ),
-                    modified: getDateString( new Date() ),
-                    color: "#1abc9c",
-                    author: "",
-                    name: "",
-                    hidden: false
-                };
-                try {
-                    metafile = JSON.parse(fs.readFileSync( appdir + filename + "/meta.json", 'utf-8' ));
-                    metainfo.created = metafile.created;
-                    metainfo.modified = metafile.modified;
-                    metainfo.color = metafile.color ? metafile.color : metainfo.color;
-                    metainfo.author = metafile.author ? metafile.author : metainfo.author;
-                    metainfo.name = metafile.name ? metafile.name : metainfo.name;
-                    metainfo.hidden = (typeof metafile.hidden !== 'undefined') ? metafile.hidden : metainfo.hidden;
-                } catch( e ) {
-                }
-                apps[filename] = { appname: filename, metadata: metainfo, ctime: metastat.ctime.getTime() };
-            }
-        }
-    }
-    return apps;
-};
 
 var getDateString = function( d ) {
     var now = new Date();
@@ -115,84 +57,247 @@ var getDateString = function( d ) {
     return d.getFullYear() + "-" + twodigits(d.getMonth()+1) + '-' + twodigits(d.getDate());
 };
 
+
+
+
 var appdir = process.cwd() + "/apps/";
+var appcache = {}
 
 exports.app = function(name, callback) {
+    if (appcache[name]) {
+      callback(null, appcache[name]);
+      return;
+    }
+
     var metafile = appdir + name + "/meta.json";
     var loadpath = appdir + name + "/app"
 
-        userapp = {
-            created: getDateString( new Date() ),
-            modified: getDateString( new Date() ),
-            color: "#1abc9c",
-            author: "Coder",
-            name: name,
-            hidden: false
-        };
+    var userapp = {
+        metadata: {
+          appname: name,
+          created: getDateString( new Date() ),
+          modified: getDateString( new Date() ),
+          color: "#1abc9c",
+          author: "Coder",
+          name: name,
+          hidden: false
+        },
 
-
-    userapp.load = function(callback) {
-        fs.readFile(metafile, { encoding: "utf-8" }, function(err, data) {
-            if (err) {
-                if (callback) callback(err);
-                return;
-            }
-
-            try {
-                var metadata = JSON.parse(data);
-                for (attr in userapp) {
-                    if (typeof userapp[attr] !== 'function' && typeof metadata[attr] !== 'undefined') {
-                        userapp[attr] = metadata[attr];
-                    }
+        load: function(callback) {
+            fs.readFile(metafile, { encoding: "utf-8" }, function(err, data) {
+                if (err) {
+                    if (callback) callback(err);
+                    return;
                 }
-            } catch (e) {
+
+                try {
+                    var data = JSON.parse(data);
+                    for (attr in userapp.metadata) {
+
+                        if (typeof data[attr] !== 'undefined') {
+                            userapp.metadata[attr] = data[attr];
+                        }
+                    }
+                } catch (e) {
+                }
+
+                if (callback) callback(null);
+            });
+        },
+
+        save: function(callback) {
+            var data = JSON.stringify(userapp.metadata);
+
+            fs.writeFile(metafile, data, { encoding: "utf-8" }, function (err) {
+                if (callback) callback(err);
+            });
+        },
+
+
+        require: function() {
+            app = require(loadpath);
+            app.settings = {}
+
+            app.settings.appname = name;
+            app.settings.path = appdir + name;
+            app.settings.viewpath = "apps/" + name;
+            app.settings.appurl = "/app/" + name;
+            app.settings.staticurl = "/static/apps/" + name;
+
+            return app;
+        },
+
+        invalidate: function() {
+            var cached = require.cache[loadpath + '.js'];
+            if ( cached ) {
+                theapp = require(loadpath);
+                if ( theapp.on_destroy ) {
+                    theapp.on_destroy();
+                }
+                delete require.cache[loadpath + ".js"];
             }
-
-            if (callback) callback(null);
-        });
-    }
-
-    userapp.save = function(callback) {
-        var data = JSON.stringify(userapp);
-
-        fs.writeFile(metafile, data, { encoding: "utf-8" }, function (err) {
-            if (callback) callback(err);
-        });
-    };
-
-
-    userapp.require = function() {
-        app = require(loadpath);
-        app.settings = {}
-
-        app.settings.appname = name;
-        app.settings.path = appdir + name;
-        app.settings.viewpath = "apps/" + name;
-        app.settings.appurl = "/app/" + name;
-        app.settings.staticurl = "/static/apps/" + name;
-
-        return app;
-    }
-
-    userapp.invalidate = function() {
-        var cached = require.cache[loadpath + '.js'];
-        if ( cached ) {
-            theapp = require(loadpath);
-            if ( theapp.on_destroy ) {
-                theapp.on_destroy();
-            }
-            delete require.cache[loadpath + ".js"];
         }
     }
-
 
     userapp.load(function(err) {
-        if (callback) {
-            if (err)
-        callback(err, null);
-            else
-        callback(null, userapp);
+      if (callback) {
+        if (err) {
+          callback(err, null);
         }
+        else {
+          appcache[name] = userapp;
+          callback(null, userapp);
+        }
+      }
     });
+}
+
+exports.listApps = function(callback, hidden) {
+  fs.readdir(appdir, function(err, files) {
+    if (err) {
+      callback(err, null);
+    }
+    else {
+      var apps = async.map(files,
+        function(name, callback) {
+          exports.app(name, function(err, app) {
+            // Don't propagate the error. If there is one, just pass a null value, it is filtered out later.
+            callback(null, err ? null : app);
+          });
+        },
+        function(err, apps) {
+          if (err) {
+            callback(err, null);
+          } else {
+            // Filter out the null ones and the ones we don't want (hidden, private, ...).
+            async.filter(apps,
+              function(item, callback) {
+                callback(item && (hidden || !item.metadata.hidden));
+              },
+              function(apps) {
+                callback(null, apps);
+              });
+          }
+        });
+    }
+  });
+}
+
+exports.device = function() {
+    var devicefile = process.cwd() + "/device.json";
+
+    var device = {
+        password_hash: "",
+        device_name: "Coder",
+        hostname: "coder",
+        coder_owner: "Coder",
+        coder_color: "3e3e3e",
+
+        loadSync: function() {
+            try {
+                var data = fs.readFileSync(devicefile, { encoding: "utf-8" });
+
+                var info = JSON.parse(data);
+                for (attr in device) {
+                  if (typeof device[attr] !== 'function' && info[attr]) {
+                    device[attr] = info[attr];
+                  }
+                }
+            } catch (e) {
+                return false;
+            }
+
+            return true;
+        },
+
+        save: function(callback) {
+            var data = JSON.stringify(device);
+
+            fs.writeFile(devicefile, data, { encoding: "utf-8" }, function (err) {
+                if (callback) callback(err);
+            });
+        }
+    }
+
+    device.loadSync();
+
+    return device;
+}();
+
+exports.api_app_list_handler = function( req, res ) {
+    exports.listApps(function(err, results) {
+      if (err) {
+        res.send(500);
+      }
+      else {
+        var apps = {}
+        for(var i in results)
+        {
+          var m = results[i].metadata;
+          apps[m.appname] = m;
+        }
+        res.json({
+          apps: apps
+        });
+      }
+    });
+};
+
+exports.api_get_device_name = function(req, res) {
+  res.json({ name: exports.device.device_name });
+}
+
+exports.api_get_device_color = function(req, res) {
+  res.json({ color: exports.device.coder_color });
+}
+
+exports.api_get_device_owner = function(req, res) {
+  res.json({ owner: exports.device.coder_owner });
+}
+
+
+exports.api_set_device_name = function(req, res) {
+  if (req.body.name)
+  {
+    exports.device.device_name = req.body.name;
+    exports.device.save(function(err) {
+      if (err)
+        res.json({ status: 'error', error: err });
+      else
+        res.json({ status: 'success', name: exports.device.device_name });
+    });
+  }
+  else
+    res.json({ status: 'error', error: '' });
+}
+
+exports.api_set_device_color = function(req, res) {
+  if (req.body.color)
+  {
+    exports.device.coder_color = req.body.color;
+    exports.device.save(function(err) {
+      if (err)
+        res.json({ status: 'error', error: err });
+      else
+        res.json({ status: 'success', color: exports.device.coder_color });
+    });
+  }
+  else
+    res.json({ status: 'error', error: '' });
+}
+
+exports.api_set_device_owner = function(req, res) {
+  if (req.body.owner)
+  {
+    exports.device.coder_owner = req.body.owner;
+    exports.device.save(function(err) {
+      if (err)
+        res.json({ status: 'error', error: err });
+      else
+        res.json({ status: 'success', owner: exports.device.coder_owner });
+    });
+  }
+  else
+    res.json({ status: 'error', error: '' });
 }
 

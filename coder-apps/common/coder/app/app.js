@@ -35,13 +35,10 @@ exports.settings={};
 //settings.viewpath - prefix to where your view html files are located
 //settings.staticurl - base url path to static assets /static/apps/appname
 //settings.appurl - base url path to this app /app/appname
-//settings.device_name
-//settings.coder_owner
-//settings.coder_color
 
 exports.get_routes = [
     { path:'/', handler:'index_handler' },
-    { path: /^\/export\/download\/(\w+\.zip)$/, handler:'export_download_handler' },
+    { path: /^\/export\/download\/(\w+\.zip)$/, handler:'export_download_handler' }
 ];
 
 
@@ -49,7 +46,7 @@ exports.post_routes = [
     { path: '/api/app/create', handler:'api_app_create_handler' },
     { path: /^\/api\/app\/remove\/(\w+)$/, handler:'api_app_remove_handler' },
     { path: /^\/api\/app\/export\/(\w+)$/, handler:'api_app_export_handler' },
-    { path: /^\/api\/app\/import$/, handler:'api_app_import_handler' },
+    { path: /^\/api\/app\/import$/, handler:'api_app_import_handler' }
 ];
 
 exports.on_destroy = function() {
@@ -60,9 +57,10 @@ exports.index_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
-    tmplvars['coder_color'] = exports.settings.coder_color;
-    tmplvars['coder_owner'] = exports.settings.coder_owner;
+
+    tmplvars['device_name'] = coderlib.device.device_name;
+    tmplvars['coder_color'] = coderlib.device.coder_color;
+    tmplvars['coder_owner'] = coderlib.device.coder_owner;
 
     res.render( exports.settings.viewpath + '/index', tmplvars );
 };
@@ -128,7 +126,7 @@ exports.api_app_create_handler = function( req, res ) {
         created: getDateString( new Date() ),
         modified: getDateString( new Date() ),
         color: appcolor,
-        author: exports.settings.coder_owner,
+        author: coderlib.device.owner,
         name: apptitle,
         hidden: false,
     };

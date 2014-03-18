@@ -23,23 +23,12 @@ var util = require('util');
 var fs = require('fs');
 var bcrypt = require('bcrypt');
 
-//stores cache of password hash and device name
-var device_settings = {
-    password_hash: '',
-    device_name: '',
-    hostname: '',
-    coder_owner: '',
-    coder_color: '#3e3e3e'
-};
-
-
 exports.settings={};
 //These are dynamically updated by the runtime
 //settings.appname - the app id (folder) where your app is installed
 //settings.viewpath - prefix to where your view html files are located
 //settings.staticurl - base url path to static assets /static/apps/appname
 //settings.appurl - base url path to this app /app/appname
-//settings.device_name - name the user gave to their coder "Susie's Coder"
 
 
 exports.get_routes = [
@@ -48,19 +37,13 @@ exports.get_routes = [
     { path:'/logout', handler:'logout_handler'},
     { path:'/configure', handler:'configure_handler'},
     { path:'/addpassword', handler:'addpassword_handler'},
-    { path:'/changepassword', handler:'changepassword_handler'},
-    { path: '/api/devicename/get', handler: 'api_devicename_get_handler' },
-    { path: '/api/codercolor/get', handler: 'api_codercolor_get_handler' },
-    { path: '/api/coderowner/get', handler: 'api_coderowner_get_handler' }
+    { path:'/changepassword', handler:'changepassword_handler'}
 ];
 
 
 exports.post_routes = [
     { path: '/api/login', handler: 'api_login_handler' },
     { path: '/api/logout', handler: 'api_logout_handler' },
-    { path: '/api/devicename/set', handler: 'api_devicename_set_handler' },
-    { path: '/api/codercolor/set', handler: 'api_codercolor_set_handler' },
-    { path: '/api/coderowner/set', handler: 'api_coderowner_set_handler' },
     { path: '/api/addpassword', handler: 'api_addpassword_handler' },
     { path: '/api/changepassword', handler: 'api_changepassword_handler' }
 ];
@@ -114,7 +97,6 @@ exports.authenticate = function( req, password ) {
 };
 
 exports.logout = function( req ) {
-    
     req.session.authenticated = false;
 };
 
@@ -144,7 +126,7 @@ exports.addpassword_handler = function( req, res ) {
     tmplvars['app_url'] = exports.settings.appurl;
     tmplvars['device_name'] = exports.settings.device_name;
     tmplvars['page_mode'] = "addpassword";
-    
+
     //only allow this step if they have not yet set a password
     if ( !exports.hasPassword() ) {
         res.render( exports.settings.viewpath + '/index', tmplvars );
@@ -160,7 +142,7 @@ exports.changepassword_handler = function( req, res ) {
     tmplvars['app_url'] = exports.settings.appurl;
     tmplvars['device_name'] = exports.settings.device_name;
     tmplvars['page_mode'] = "changepassword";
-    
+
     //only allow this step if they are authenticated
     if ( exports.isAuthenticated(req) ) {
         res.render( exports.settings.viewpath + '/index', tmplvars );
@@ -176,7 +158,7 @@ exports.configure_handler = function( req, res ) {
     tmplvars['app_url'] = exports.settings.appurl;
     tmplvars['device_name'] = exports.settings.device_name;
     tmplvars['page_mode'] = "configure";
-    
+
     //only allow this step if they are authenticated or have not yet set a password
     if ( exports.isAuthenticated(req) || !exports.hasPassword() ) {
         res.render( exports.settings.viewpath + '/index', tmplvars );
@@ -231,7 +213,7 @@ exports.api_devicename_set_handler = function( req, res ) {
 
     device_settings.device_name = devicename;
     device_settings.hostname = hostnameFromDeviceName( devicename );
-    
+
     err = saveDeviceSettings();
 
     if ( !err ) {
@@ -246,7 +228,7 @@ exports.api_devicename_set_handler = function( req, res ) {
             error: "could not save device settings"
         });
     }
-    
+
 };
 
 
@@ -271,7 +253,7 @@ exports.api_coderowner_set_handler = function( req, res ) {
     }
 
     device_settings.coder_owner = owner;
-    
+
     err = saveDeviceSettings();
 
     if ( !err ) {
@@ -285,7 +267,7 @@ exports.api_coderowner_set_handler = function( req, res ) {
             error: "could not save device settings"
         });
     }
-    
+
 };
 
 exports.api_codercolor_set_handler = function( req, res ) {
@@ -309,7 +291,7 @@ exports.api_codercolor_set_handler = function( req, res ) {
     }
 
     device_settings.coder_color = color;
-    
+
     err = saveDeviceSettings();
 
     if ( !err ) {
@@ -323,7 +305,7 @@ exports.api_codercolor_set_handler = function( req, res ) {
             error: "could not save device settings"
         });
     }
-    
+
 };
 
 exports.api_addpassword_handler = function( req, res ) {
@@ -363,8 +345,8 @@ exports.api_addpassword_handler = function( req, res ) {
     //setpass.addListener( 'exit', function( code, signal ) {
     var completed = function( code, signal ) {
         err = code;
-        
-        
+
+
         if ( err ) {
             res.json({
                 status: "error",
@@ -379,7 +361,7 @@ exports.api_addpassword_handler = function( req, res ) {
         util.log("PASSWORD INITIALIZED");
         device_settings.password_hash = h;
         err = saveDeviceSettings();
-    
+
         if ( !err ) {
             res.json({
                 status: "success"
@@ -390,7 +372,7 @@ exports.api_addpassword_handler = function( req, res ) {
                 error: "Could not save device settings."
             });
         }
-        
+
     };
 
     completed();
@@ -416,7 +398,7 @@ exports.api_changepassword_handler = function( req, res ) {
 
     var oldpass = req.param('oldpassword');
     var pass = req.param('password');
-    
+
     //Make sure old pass is set and matches
     if ( typeof oldpass === 'undefined' || oldpass === "" 
             || !bcrypt.compareSync( oldpass, device_settings.password_hash ) ) {
@@ -426,7 +408,7 @@ exports.api_changepassword_handler = function( req, res ) {
         });
         return;
     }
-    
+
     if ( !pass || pass === "" || !isValidPassword( pass ) ) {
         res.json({
             status: 'error', 
@@ -452,8 +434,8 @@ exports.api_changepassword_handler = function( req, res ) {
     //setpass.addListener( 'exit', function( code, signal ) {
     var completed = function( code, signal ) {
         err = code;
-        
-        
+
+
         if ( err ) {
             res.json({
                 status: "error",
@@ -468,7 +450,7 @@ exports.api_changepassword_handler = function( req, res ) {
         util.log("PASSWORD INITIALIZED");
         device_settings.password_hash = h;
         err = saveDeviceSettings();
-    
+
         if ( !err ) {
             res.json({
                 status: "success"
@@ -479,7 +461,7 @@ exports.api_changepassword_handler = function( req, res ) {
                 error: "Could not save device settings."
             });
         }
-        
+
     };
 
     completed();
@@ -497,7 +479,7 @@ exports.login_handler = function( req, res ) {
     tmplvars['app_url'] = exports.settings.appurl;
     tmplvars['device_name'] = exports.settings.device_name;
     tmplvars['page_mode'] = "login";
-    
+
 
     //TODO - should this log you out automatically?
     req.session.authenticated = false;
@@ -548,14 +530,14 @@ var reloadDeviceSettings = function() {
         coder_owner: '',
         coder_color: ''
     };
-    
+
     var loadedsettings = JSON.parse(fs.readFileSync( process.cwd() + "/device.json", 'utf-8' ));
     settings.password_hash = ( typeof loadedsettings.password_hash !== 'undefined' && loadedsettings.password_hash !== '' ) ? loadedsettings.password_hash : settings.password_hash;
     settings.device_name = ( typeof loadedsettings.device_name !== 'undefined' && loadedsettings.device_name !== '' ) ? loadedsettings.device_name : settings.device_name;
     settings.hostname = ( typeof loadedsettings.hostname !== 'undefined' && loadedsettings.hostname !== '' ) ? loadedsettings.hostname : settings.hostname;
     settings.coder_owner = ( typeof loadedsettings.coder_owner !== 'undefined' && loadedsettings.coder_owner !== '' ) ? loadedsettings.coder_owner : settings.coder_owner;
     settings.coder_color = ( typeof loadedsettings.coder_color !== 'undefined' && loadedsettings.coder_color !== '' ) ? loadedsettings.coder_color : settings.coder_color;
-    
+
     device_settings = settings;
 }
 reloadDeviceSettings();
@@ -591,7 +573,7 @@ var getPasswordProblem = function( pass ) {
         return "the password should contain at least 6 characters";
     }
     if ( !pass.match(/[a-z]/) || 
-        !pass.match(/[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\].*[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\]/) ) {
+            !pass.match(/[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\].*[A-Z0-9\-\_\.\,\;\:\'\"\[\]\{\}\!\@\#\$\%\^\&\*\(\)\\]/) ) {
         return "your password must contain a lower case letter and at least two upper case letters or numbers";
     }
 };
