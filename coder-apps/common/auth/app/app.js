@@ -60,7 +60,7 @@ exports.isAuthenticated = function( req ) {
 };
 
 exports.isConfigured = function() {
-    if ( typeof coderlib.device.device_name !== 'undefined' && coderlib.device.device_name !== '' &&
+    if ( typeof coderlib.device.name !== 'undefined' && coderlib.device.name !== '' &&
             typeof coderlib.device.hostname !== 'undefined' && coderlib.device.hostname !== '' ) {
         return true;
     } else {
@@ -114,7 +114,7 @@ exports.addpassword_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
+    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "addpassword";
 
     //only allow this step if they have not yet set a password
@@ -130,7 +130,7 @@ exports.changepassword_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
+    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "changepassword";
 
     //only allow this step if they are authenticated
@@ -146,7 +146,7 @@ exports.configure_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
+    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "configure";
 
     //only allow this step if they are authenticated or have not yet set a password
@@ -269,7 +269,6 @@ exports.api_changepassword_handler = function( req, res ) {
 
     var spawn = require('child_process').spawn;
     var err=0;
-    //device_settings.device_name = devicename;
     var erroutput = "";
     var output = "";
     //var setpipass = process.cwd() + '/sudo_scripts/setpipass';
@@ -326,7 +325,7 @@ exports.login_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
+    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "login";
 
 
@@ -340,7 +339,7 @@ exports.logout_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
+    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "logout";
 
     req.session.authenticated = false;

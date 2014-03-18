@@ -273,8 +273,7 @@ console.log = function(d) {
 var pingEnabled = config.enableStatusServer;
 var pingStatusServer = function() {
     var server = config.statusServer;
-    var auth = auth = require(process.cwd() + "/apps/auth/app"); //needed for DeviceName
-    var devicename = auth.getDeviceName();
+    var devicename = coderlib.device.device_name;
 
     if ( typeof server === 'undefined' || server === "" || !pingEnabled ) {
         return;

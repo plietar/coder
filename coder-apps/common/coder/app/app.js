@@ -58,9 +58,9 @@ exports.index_handler = function( req, res ) {
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
 
-    tmplvars['device_name'] = coderlib.device.device_name;
-    tmplvars['coder_color'] = coderlib.device.coder_color;
-    tmplvars['coder_owner'] = coderlib.device.coder_owner;
+    tmplvars['device_name'] = coderlib.device.name;
+    tmplvars['coder_color'] = coderlib.device.color;
+    tmplvars['coder_owner'] = coderlib.device.owner;
 
     res.render( exports.settings.viewpath + '/index', tmplvars );
 };

@@ -38,7 +38,7 @@ exports.index_handler = function( req, res ) {
     tmplvars['static_url'] = exports.settings.staticurl;
     tmplvars['app_name'] = exports.settings.appname;
     tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = exports.settings.device_name;
+    tmplvars['device_name'] = coderlib.device.name;
 
     res.render( exports.settings.viewpath + '/index', tmplvars );
 };

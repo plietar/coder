@@ -188,10 +188,10 @@ exports.device = function() {
 
     var device = {
         password_hash: "",
-        device_name: "Coder",
+        name: "Coder",
         hostname: "coder",
-        coder_owner: "Coder",
-        coder_color: "3e3e3e",
+        owner: "Coder",
+        color: "3e3e3e",
 
         loadSync: function() {
             try {
@@ -244,15 +244,15 @@ exports.api_app_list_handler = function( req, res ) {
 };
 
 exports.api_get_device_name = function(req, res) {
-  res.json({ name: exports.device.device_name });
+  res.json({ name: exports.device.name });
 }
 
 exports.api_get_device_color = function(req, res) {
-  res.json({ color: exports.device.coder_color });
+  res.json({ color: exports.device.color });
 }
 
 exports.api_get_device_owner = function(req, res) {
-  res.json({ owner: exports.device.coder_owner });
+  res.json({ owner: exports.device.owner });
 }
 
 var hostnameFromDeviceName = function( name ) {
@@ -281,14 +281,14 @@ var isValidDeviceName = function( name ) {
 exports.api_set_device_name = function(req, res) {
   if (isValidDeviceName(req.body.name))
   {
-    exports.device.device_name = req.body.name;
+    exports.device.name = req.body.name;
     exports.device.hostname = hostnameFromDeviceName( devicename );
 
     exports.device.save(function(err) {
       if (err)
         res.json({ status: 'error', error: err });
       else
-        res.json({ status: 'success', name: exports.device.device_name });
+        res.json({ status: 'success', name: exports.device.name });
     });
   }
   else
@@ -309,7 +309,7 @@ var isValidColor = function( color ) {
 exports.api_set_device_color = function(req, res) {
   if (isValidColor(req.body.color))
   {
-    exports.device.coder_color = req.body.color;
+    exports.device.color = req.body.color;
     exports.device.save(function(err) {
       if (err)
         res.json({ status: 'error', error: err });
@@ -324,12 +324,12 @@ exports.api_set_device_color = function(req, res) {
 exports.api_set_device_owner = function(req, res) {
   if (req.body.owner)
   {
-    exports.device.coder_owner = req.body.owner;
+    exports.device.owner = req.body.owner;
     exports.device.save(function(err) {
       if (err)
         res.json({ status: 'error', error: err });
       else
-        res.json({ status: 'success', owner: exports.device.coder_owner });
+        res.json({ status: 'success', owner: exports.device.owner });
     });
   }
   else
