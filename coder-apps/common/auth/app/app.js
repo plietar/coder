@@ -60,8 +60,8 @@ exports.isAuthenticated = function( req ) {
 };
 
 exports.isConfigured = function() {
-    if ( typeof device_settings.device_name !== 'undefined' && device_settings.device_name !== '' &&
-            typeof device_settings.hostname !== 'undefined' && device_settings.hostname !== '' ) {
+    if ( typeof coderlib.device.device_name !== 'undefined' && coderlib.device.device_name !== '' &&
+            typeof coderlib.device.hostname !== 'undefined' && coderlib.device.hostname !== '' ) {
         return true;
     } else {
         return false;
@@ -69,26 +69,16 @@ exports.isConfigured = function() {
 };
 
 exports.hasPassword = function() {
-    if ( typeof device_settings.password_hash !== 'undefined' && device_settings.password_hash !== '' ) {
+    if ( typeof coderlib.device.password_hash !== 'undefined' && coderlib.device.password_hash !== '' ) {
         return true;
     } else {
         return false;
     }
 };
 
-exports.getDeviceName = function() {
-    return device_settings.device_name;
-};
-exports.getCoderOwner = function() {
-    return device_settings.coder_owner;
-};
-exports.getCoderColor = function() {
-    return device_settings.coder_color;
-};
-
 exports.authenticate = function( req, password ) {
 
-    var authenticated = bcrypt.compareSync( password, device_settings.password_hash );
+    var authenticated = bcrypt.compareSync( password, coderlib.device.password_hash );
     if ( authenticated ) {
         req.session.authenticated = true;
     }
@@ -167,147 +157,6 @@ exports.configure_handler = function( req, res ) {
     }
 };
 
-exports.api_devicename_get_handler = function( req, res ) {
-    res.json({
-        device_name: exports.getDeviceName()
-    });
-};
-exports.api_codercolor_get_handler = function( req, res ) {
-    res.json({
-        coder_color: exports.getCoderColor()
-    });
-};
-exports.api_coderowner_get_handler = function( req, res ) {
-    //only allow this step if they are authenticated or have not yet set a password
-    if ( !exports.isAuthenticated(req) && exports.hasPassword() ) {
-        res.json({
-            status: "error",
-            error: "not authenticated"
-        });
-        return;
-    }
-    res.json({
-        coder_owner: exports.getCoderOwner()
-    });
-};
-
-exports.api_devicename_set_handler = function( req, res ) {
-
-    //only allow this step if they are authenticated or have not yet set a password
-    if ( !exports.isAuthenticated(req) && exports.hasPassword() ) {
-        res.json({
-            status: "error",
-            error: "not authenticated"
-        });
-        return;
-    }
-
-    var devicename = req.param('device_name');
-    if ( !devicename || devicename === "" || !isValidDeviceName( devicename ) ) {
-        res.json({
-            status: 'error', 
-            error: "invalid device name" 
-        });
-        return;
-    }
-
-    device_settings.device_name = devicename;
-    device_settings.hostname = hostnameFromDeviceName( devicename );
-
-    err = saveDeviceSettings();
-
-    if ( !err ) {
-        res.json({
-            status: "success",
-            device_name: device_settings.device_name,
-            hostname: device_settings.hostname
-        });
-    } else {
-        res.json({
-            status: "error",
-            error: "could not save device settings"
-        });
-    }
-
-};
-
-
-exports.api_coderowner_set_handler = function( req, res ) {
-
-    //only allow this step if they are authenticated or have not yet set a password
-    if ( !exports.isAuthenticated(req) && exports.hasPassword() ) {
-        res.json({
-            status: "error",
-            error: "not authenticated"
-        });
-        return;
-    }
-
-    var owner = req.param('coder_owner');
-    if ( typeof owner === 'undefined' ) {
-        res.json({
-            status: 'error', 
-            error: "invalid owner name" 
-        });
-        return;
-    }
-
-    device_settings.coder_owner = owner;
-
-    err = saveDeviceSettings();
-
-    if ( !err ) {
-        res.json({
-            status: "success",
-            coder_owner: device_settings.coder_owner
-        });
-    } else {
-        res.json({
-            status: "error",
-            error: "could not save device settings"
-        });
-    }
-
-};
-
-exports.api_codercolor_set_handler = function( req, res ) {
-
-    //only allow this step if they are authenticated or have not yet set a password
-    if ( !exports.isAuthenticated(req) && exports.hasPassword() ) {
-        res.json({
-            status: "error",
-            error: "not authenticated"
-        });
-        return;
-    }
-
-    var color = req.param('coder_color');
-    if ( typeof color === 'undefined' || !isValidColor( color ) ) {
-        res.json({
-            status: 'error', 
-            error: "invalid color" 
-        });
-        return;
-    }
-
-    device_settings.coder_color = color;
-
-    err = saveDeviceSettings();
-
-    if ( !err ) {
-        res.json({
-            status: "success",
-            coder_color: device_settings.coder_color
-        });
-    } else {
-        res.json({
-            status: "error",
-            error: "could not save device settings"
-        });
-    }
-
-};
-
 exports.api_addpassword_handler = function( req, res ) {
 
     //only allow this step if they have not yet set a password
@@ -330,7 +179,6 @@ exports.api_addpassword_handler = function( req, res ) {
 
     var spawn = require('child_process').spawn;
     var err=0;
-    //device_settings.device_name = devicename;
     var erroutput = "";
     var output = "";
     //var setpipass = process.cwd() + '/sudo_scripts/setpipass';
@@ -346,7 +194,6 @@ exports.api_addpassword_handler = function( req, res ) {
     var completed = function( code, signal ) {
         err = code;
 
-
         if ( err ) {
             res.json({
                 status: "error",
@@ -359,20 +206,19 @@ exports.api_addpassword_handler = function( req, res ) {
         var s = bcrypt.genSaltSync(10);
         var h = bcrypt.hashSync( pass, s );
         util.log("PASSWORD INITIALIZED");
-        device_settings.password_hash = h;
-        err = saveDeviceSettings();
-
-        if ( !err ) {
-            res.json({
-                status: "success"
-            });
-        } else {
-            res.json({
-                status: "error",
-                error: "Could not save device settings."
-            });
-        }
-
+        coderlib.device.password_hash = h;
+        coderlib.device.save(function(err) {
+            if ( !err ) {
+                res.json({
+                    status: "success"
+                });
+            } else {
+                res.json({
+                    status: "error",
+                    error: "Could not save device settings."
+                });
+            }
+        });
     };
 
     completed();
@@ -401,7 +247,7 @@ exports.api_changepassword_handler = function( req, res ) {
 
     //Make sure old pass is set and matches
     if ( typeof oldpass === 'undefined' || oldpass === "" 
-            || !bcrypt.compareSync( oldpass, device_settings.password_hash ) ) {
+            || !bcrypt.compareSync( oldpass, coderlib.device.password_hash ) ) {
         res.json({
             status: 'error', 
             error: "old password was incorrect" 
@@ -448,20 +294,19 @@ exports.api_changepassword_handler = function( req, res ) {
         var s = bcrypt.genSaltSync(10);
         var h = bcrypt.hashSync( pass, s );
         util.log("PASSWORD INITIALIZED");
-        device_settings.password_hash = h;
-        err = saveDeviceSettings();
-
-        if ( !err ) {
-            res.json({
-                status: "success"
-            });
-        } else {
-            res.json({
-                status: "error",
-                error: "Could not save device settings."
-            });
-        }
-
+        coderlib.device.password_hash = h;
+        coderlib.device.save(function(err) {
+            if ( !err ) {
+                res.json({
+                    status: "success"
+                });
+            } else {
+                res.json({
+                    status: "error",
+                    error: "Could not save device settings."
+                });
+            }
+        });
     };
 
     completed();
@@ -511,59 +356,14 @@ exports.api_login_handler = function( req, res ) {
         error: 'invalid password'
     } );
 };
+
 exports.api_logout_handler = function( req, res ) {
     req.session.authenticated = false;
 
     res.json( { status: 'success'} );
 };
 
-var saveDeviceSettings = function() {
-    err = fs.writeFileSync( process.cwd() + "/device.json", JSON.stringify(device_settings, null, 4), 'utf8' );
-    return err;
-};
 
-var reloadDeviceSettings = function() {
-    var settings = {
-        password_hash: '',
-        device_name: '',
-        hostname: '',
-        coder_owner: '',
-        coder_color: ''
-    };
-
-    var loadedsettings = JSON.parse(fs.readFileSync( process.cwd() + "/device.json", 'utf-8' ));
-    settings.password_hash = ( typeof loadedsettings.password_hash !== 'undefined' && loadedsettings.password_hash !== '' ) ? loadedsettings.password_hash : settings.password_hash;
-    settings.device_name = ( typeof loadedsettings.device_name !== 'undefined' && loadedsettings.device_name !== '' ) ? loadedsettings.device_name : settings.device_name;
-    settings.hostname = ( typeof loadedsettings.hostname !== 'undefined' && loadedsettings.hostname !== '' ) ? loadedsettings.hostname : settings.hostname;
-    settings.coder_owner = ( typeof loadedsettings.coder_owner !== 'undefined' && loadedsettings.coder_owner !== '' ) ? loadedsettings.coder_owner : settings.coder_owner;
-    settings.coder_color = ( typeof loadedsettings.coder_color !== 'undefined' && loadedsettings.coder_color !== '' ) ? loadedsettings.coder_color : settings.coder_color;
-
-    device_settings = settings;
-}
-reloadDeviceSettings();
-
-
-var isValidDeviceName = function( name ) {
-    if ( !name || name === '' ) {
-        return false;
-    }
-    //starts with an ascii word char. can contain word char's spaces and '
-    if ( !name.match(/^[a-zA-Z0-9][\w ']*$/) ) {
-        return false;
-    }
-    //ends in an ascii word char
-    if ( !name.match(/[a-zA-Z0-9]$/) ) {
-        return false;
-    }
-    return true;
-};
-var hostnameFromDeviceName = function( name ) {
-    var hostname = name;
-    hostname = hostname.toLowerCase();
-    hostname = hostname.replace(/[^a-z0-9\- ]/g, '');
-    hostname = hostname.replace(/[\- ]+/g,'-');
-    return hostname;
-};
 
 var getPasswordProblem = function( pass ) {
     if ( !pass || pass === '' ) {
@@ -597,16 +397,6 @@ var isValidPassword = function( pass ) {
     return true;
 };
 
-var isValidColor = function( color ) {
-    if ( !color || color === '' ) {
-        return false;
-    }
-    color = color.toLowerCase();
-    if ( !color.match(/^\#[a-f0-9]{6}$/) ) {
-        return false;
-    }
-    return true;
-}
 
 
 

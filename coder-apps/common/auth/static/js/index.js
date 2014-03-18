@@ -262,10 +262,9 @@ var configureClick = function() {
         return;
     }
     
-    $.post( 
-        appurl + '/api/devicename/set', 
+    $.post('/app/coderlib/api/device/name',
         {
-            device_name: devicename 
+            name: devicename
         }, 
         function( data ) {
             console.log( data );

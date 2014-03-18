@@ -255,11 +255,35 @@ exports.api_get_device_owner = function(req, res) {
   res.json({ owner: exports.device.coder_owner });
 }
 
+var hostnameFromDeviceName = function( name ) {
+    var hostname = name;
+    hostname = hostname.toLowerCase();
+    hostname = hostname.replace(/[^a-z0-9\- ]/g, '');
+    hostname = hostname.replace(/[\- ]+/g,'-');
+    return hostname;
+};
+
+var isValidDeviceName = function( name ) {
+    if ( !name || name === '' ) {
+        return false;
+    }
+    //starts with an ascii word char. can contain word char's spaces and '
+    if ( !name.match(/^[a-zA-Z0-9][\w ']*$/) ) {
+        return false;
+    }
+    //ends in an ascii word char
+    if ( !name.match(/[a-zA-Z0-9]$/) ) {
+        return false;
+    }
+    return true;
+};
 
 exports.api_set_device_name = function(req, res) {
-  if (req.body.name)
+  if (isValidDeviceName(req.body.name))
   {
     exports.device.device_name = req.body.name;
+    exports.device.hostname = hostnameFromDeviceName( devicename );
+
     exports.device.save(function(err) {
       if (err)
         res.json({ status: 'error', error: err });
@@ -271,8 +295,19 @@ exports.api_set_device_name = function(req, res) {
     res.json({ status: 'error', error: '' });
 }
 
+var isValidColor = function( color ) {
+    if ( !color || color === '' ) {
+        return false;
+    }
+    color = color.toLowerCase();
+    if ( !color.match(/^\#[a-f0-9]{6}$/) ) {
+        return false;
+    }
+    return true;
+}
+
 exports.api_set_device_color = function(req, res) {
-  if (req.body.color)
+  if (isValidColor(req.body.color))
   {
     exports.device.coder_color = req.body.color;
     exports.device.save(function(err) {
