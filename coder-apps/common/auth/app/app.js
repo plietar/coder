@@ -111,10 +111,6 @@ exports.index_handler = function( app, req, res ) {
 
 exports.addpassword_handler = function( app, req, res ) {
     var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "addpassword";
 
     //only allow this step if they have not yet set a password
@@ -127,10 +123,6 @@ exports.addpassword_handler = function( app, req, res ) {
 
 exports.changepassword_handler = function( app, req, res ) {
     var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "changepassword";
 
     //only allow this step if they are authenticated
@@ -143,10 +135,6 @@ exports.changepassword_handler = function( app, req, res ) {
 
 exports.configure_handler = function( app, req, res ) {
     var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "configure";
 
     //only allow this step if they are authenticated or have not yet set a password
@@ -322,12 +310,7 @@ exports.api_changepassword_handler = function( app, req, res ) {
 
 exports.login_handler = function( app, req, res ) {
     var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "login";
-
 
     //TODO - should this log you out automatically?
     req.session.authenticated = false;
@@ -336,10 +319,6 @@ exports.login_handler = function( app, req, res ) {
 
 exports.logout_handler = function( app, req, res ) {
     var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = coderlib.device.name;
     tmplvars['page_mode'] = "logout";
 
     req.session.authenticated = false;

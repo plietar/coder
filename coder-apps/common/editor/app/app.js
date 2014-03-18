@@ -50,10 +50,6 @@ exports.post_routes = [
 
 exports.index_handler = function( app, req, res, pathmatches ) {
     var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    
 
     var edit_appname;
     if ( pathmatches && pathmatches[1] != "" ) {

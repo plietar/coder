@@ -53,16 +53,7 @@ exports.on_destroy = function() {
 };
 
 exports.index_handler = function( app, req, res ) {
-    var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-
-    tmplvars['device_name'] = coderlib.device.name;
-    tmplvars['coder_color'] = coderlib.device.color;
-    tmplvars['coder_owner'] = coderlib.device.owner;
-
-    res.render( exports.settings.viewpath + '/index', tmplvars );
+    res.render( exports.settings.viewpath + '/index' );
 };
 
 var getAppIDFromTitle = function( apptitle ) {

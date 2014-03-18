@@ -14,13 +14,7 @@ exports.post_routes = [
 
 
 exports.index_handler = function( app, req, res ) {
-    var tmplvars = {};
-    tmplvars['static_url'] = exports.settings.staticurl;
-    tmplvars['app_name'] = exports.settings.appname;
-    tmplvars['app_url'] = exports.settings.appurl;
-    tmplvars['device_name'] = coderlib.device.name;
-
-    res.render( exports.settings.viewpath + '/index', tmplvars );
+    res.render( exports.settings.viewpath + '/index' );
 };
 
 exports.on_destroy = function() {

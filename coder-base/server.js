@@ -58,7 +58,14 @@ var apphandler = function( req, res, appdir ) {
             });
             return;
         }
-        userapp = app.require()
+        userapp = app.require();
+
+        res.locals["app_name"]    = name;
+        res.locals["app_url"]     = "/app/" + name;
+        res.locals["static_url"]  = "/static/apps/" + name;
+        res.locals["device_name"] = coderlib.device.name;
+        res.locals["coder_owner"] = coderlib.device.owner;
+        res.locals["coder_color"] = coderlib.device.color;
 
         //Redirect to sign-in for unauthenticated users
         user = auth.isAuthenticated(req, res);
