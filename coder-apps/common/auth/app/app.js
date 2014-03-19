@@ -23,14 +23,6 @@ var util = require('util');
 var fs = require('fs');
 var bcrypt = require('bcrypt');
 
-exports.settings={};
-//These are dynamically updated by the runtime
-//settings.appname - the app id (folder) where your app is installed
-//settings.viewpath - prefix to where your view html files are located
-//settings.staticurl - base url path to static assets /static/apps/appname
-//settings.appurl - base url path to this app /app/appname
-
-
 exports.get_routes = [
     { path:'/', handler:'index_handler'},
     { path:'/login', handler:'login_handler'},

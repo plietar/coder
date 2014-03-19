@@ -23,13 +23,6 @@ var util = require('util');
 var fs = require('fs');
 var async = require('async');
 
-exports.settings={};
-//These are dynamically updated by the runtime
-//settings.appname - the app id (folder) where your app is installed
-//settings.viewpath - prefix to where your view html files are located
-//settings.staticurl - base url path to static assets /static/apps/appname
-//settings.appurl - base url path to this app /app/appname
-
 exports.get_routes = [
     { path: '/api/app/list', handler: 'api_app_list_handler' },
 
@@ -117,16 +110,7 @@ exports.app = function(name, callback) {
 
 
         require: function() {
-            app = require(loadpath);
-            app.settings = {}
-
-            app.settings.appname = name;
-            app.settings.path = appdir + name;
-            app.settings.viewpath = "apps/" + name;
-            app.settings.appurl = "/app/" + name;
-            app.settings.staticurl = "/static/apps/" + name;
-
-            return app;
+            return require(loadpath);
         },
 
         invalidate: function() {
