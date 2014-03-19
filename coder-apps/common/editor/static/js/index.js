@@ -149,12 +149,7 @@ var downloadURL = function downloadURL(url) {
 
 
 var exportAppClicked = function() {
-    
-    $.post( '/app/coder/api/app/export/' + edit_appname, function( d ) {
-        if ( d.status == 'success' ) {
-            downloadURL( '/app/coder/export/download/' + d.file );
-        }
-    });
+    downloadURL( '/app/coder/export/download/' + edit_appname + '.zip' );
 };
 
 
