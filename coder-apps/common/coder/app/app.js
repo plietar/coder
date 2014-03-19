@@ -22,6 +22,8 @@ var mustache = require('mustache');
 var util = require('util');
 var fs = require('fs');
 var spawn = require('child_process').spawn;
+var tmp = require('tmp');
+var async = require('async');
 
 //hack to make fs.existsSync work between different node versions
 if ( !fs.existsSync ) {
@@ -38,7 +40,7 @@ exports.get_routes = [
 exports.post_routes = [
     { path: '/api/app/create', handler:'api_app_create_handler' },
     { path: /^\/api\/app\/remove\/(\w+)$/, handler:'api_app_remove_handler' },
-    { path: /^\/api\/app\/import$/, handler:'api_app_import_handler' }
+    { path: "/api/app/import", handler:'api_app_import_handler' }
 ];
 
 exports.on_destroy = function() {
@@ -184,7 +186,7 @@ exports.export_download_handler = function( app, req, res, pathmatches ) {
 };
 
 
-exports.api_app_import_handler = function( app, req, res, pathmatches ) {
+exports.api_app_import_handler = function( app, req, res ) {
 
     if ( !req.files || !req.files['import_file'] ) {
         res.json({
@@ -202,122 +204,82 @@ exports.api_app_import_handler = function( app, req, res, pathmatches ) {
         return;
     }
 
-    var path = process.cwd();
-    var success = true;
-    var importkey = 'appimport'; //TODO: maybe this should be random and auto-cleaned
-    var tmpfolder = path + '/tmp/' + importkey;
-    try { forceRemoveDir( tmpfolder ); } catch (e) {}
-    try { fs.mkdirSync( tmpfolder ); } catch (e) { success = false; }
+    tmp.dir( { mode: 0755, unsafeCleanup: true }, function(err, tmpPath) {
+        var unzip = spawn('unzip', [req.files['import_file'].path], { cwd: tmpPath });
 
+        unzip.on('exit', function (code) {
+            if(code !== 0) {
+                res.json({
+                    status: "error",
+                    error: "unzip error: " + code
+                });
+            } else {
+                console.log(tmpPath);
+                async.every([
+                    tmpPath + '/app/meta.json',
+                    tmpPath + '/app/app.js',
+                    tmpPath + '/views/index.html',
+                    tmpPath + '/static/css/index.css',
+                    tmpPath + '/static/js/index.js'],
+                    fs.exists,
+                    function (result) {
+                        if (!result) {
+                            res.json({
+                                status: "error",
+                                error: "Invalid application bundle"
+                            });
+                            return;
+                        }
 
-    var completeImport = function() {
+                        fs.readFile( tmpPath + '/app/meta.json', 'utf-8', function (err, data) {
+                            if (err) {
+                                res.json({
+                                    status: "error",
+                                    error: "cannot open project file"
+                                });
+                                return;
+                            }
 
-        if ( !fs.existsSync( tmpfolder + '/app/meta.json' ) 
-                || !fs.existsSync( tmpfolder + '/app/app.js') 
-                || !fs.existsSync( tmpfolder + '/views/index.html') 
-                || !fs.existsSync( tmpfolder + '/static/css/index.css') 
-                || !fs.existsSync( tmpfolder + '/static/js/index.js') ) {
+                            var metadata = JSON.parse(data);
+                            if (!metadata || !metadata.name) {
+                                res.json({
+                                    status: "error",
+                                    error: "invalid project file"
+                                });
+                                return;
+                            }
 
-            res.json({
-                status: "error",
-                error: "Invalid application bundle"
-            });
-            return;        
-        }
+                            var newappid = getAppIDFromTitle( metadata.name );
+                            if ( newappid === "" ) {
+                                res.json({
+                                    status: 'error',
+                                    error: 'invalid app id'
+                                });
+                                return;
+                            }
 
+                            newappid = getAvailableNewAppID( newappid );
 
-        var importfile = fs.readFileSync( tmpfolder + '/app/meta.json', 'utf-8' );
-        var importinfo = JSON.parse(importfile);
-        
-        if ( !importinfo || !importinfo.color  
-                || typeof(importinfo.author) === 'undefined' || !importinfo.name 
-                || !importinfo.created || !importinfo.modified ) {
-
-            res.json({
-                status: "error",
-                error: "invalid project file"
-            });
-            return;
-        }
-
-
-        var metainfo = {
-            created: importinfo.created,
-            modified: importinfo.modified,
-            color: importinfo.color,
-            author: importinfo.author,
-            name: importinfo.name,
-            hidden: false,
-        };
-
-        var newappid = getAppIDFromTitle( metainfo.name );
-        if ( newappid === "" ) {
-            res.json({
-                status: 'error',
-                error: 'invalid app id'
-            });
-        }
-        newappid = getAvailableNewAppID( newappid );
-        buildFolderStructure( newappid );
-
-        //app meta.json file
-        var metapath = process.cwd() + '/apps/' + newappid + '/meta.json';
-        fs.writeFileSync(  metapath, JSON.stringify(metainfo, null, 4), 'utf8' );
-    
-        //app node.js file
-        copyFile( tmpfolder + '/app/app.js', path + '/apps/' + newappid + '/app.js' );
-        //html view
-        copyFile( tmpfolder + '/views/index.html', path + '/views/apps/' + newappid + '/index.html' );
-        //css data
-        copyFile( tmpfolder + '/static/css/index.css', path + '/static/apps/' + newappid + '/css/index.css' );
-        //index.js file
-        copyFile( tmpfolder + '/static/js/index.js', path + '/static/apps/' + newappid + '/js/index.js' );
-       
-        var mediadir = tmpfolder + '/static/media/';
-        var mediafiles = fs.readdirSync( mediadir );
-        for ( var x in mediafiles ) {
-            var filename = mediafiles[x];
-            var info = fs.statSync( mediadir + filename );
-            if ( typeof info !== 'undefined' && info && info.isFile() ) {
-                copyFile( mediadir + filename, path + "/static/apps/" + newappid + "/media/" + filename );
-            }
-        }
-
-
-        res.json({
-            status: "success",
-            name: metainfo.name,
-            appname: newappid
-        });
-    };
-
-
-    var uploadPath = tmpfolder + '/appimport.zip';
-    fs.readFile(req.files['import_file'].path, function (err, data) {
-        fs.writeFile(uploadPath, data, function (err) {
-            
-            var unzip = spawn('unzip', ['appimport.zip'], { cwd: tmpfolder });
-            unzip.stdout.on('data', function (data) {
-            });
-            unzip.stderr.on('data', function (data) {
-            });
-            unzip.on('exit', function (code) {
-                if(code !== 0) {
-                    res.json({
-                        status: "error",
-                        error: "unzip error: " + code
+                            coderlib.createApp(tmpPath, newappid, function(err, app) {
+                                if (err) {
+                                    res.json({
+                                        status: 'error',
+                                        error: err
+                                    });
+                                } else {
+                                    res.json({
+                                        status: "success",
+                                        name: app.metadata.name,
+                                        appname: app.name
+                                    });
+                                }
+                            });
+                        });
                     });
-                } else {                    
-                    completeImport();
-                }
-            });
-            
+            }
         });
     });
-
-
-
-};
+}
 
 exports.api_app_remove_handler = function( app, req, res, pathmatches ) {
     var apptoremove = "";

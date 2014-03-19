@@ -125,17 +125,12 @@ var handleFileImport = function( ev ) {
     if ( files && files.length > 0 ) {
         var importfile = files[0];
 
-        //console.log( importfile );
-        if (!importfile.type.match('application/zip')) {
-            alert('This doesn\'t appear to be a Coder project zip file');
-            return false;
-        }
         thefile = importfile;
         
         var fdata = new FormData();
         fdata.append( 'import_file', thefile );
         fdata.append( 'test', 'foo' );
-        
+
         $.ajax({
             url: '/app/coder/api/app/import',
             type: 'POST',
@@ -154,23 +149,6 @@ var handleFileImport = function( ev ) {
                 }
             }
         });
-        
-        
-        /*
-        var reader = new FileReader();
-        // Closure to capture the file information.
-        reader.onload = (function(theFile) {
-            return function(e) {
-                // Render thumbnail.
-                var span = document.createElement('span');
-                span.innerHTML = ['<img class="thumb" src="', e.target.result,
-                            '" title="', escape(theFile.name), '"/>'].join('');
-                document.getElementById('list').insertBefore(span, null);
-            };
-        })(f);
-      
-        reader.readAsDataURL(f);
-        */
     }
 };
 
