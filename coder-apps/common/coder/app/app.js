@@ -22,7 +22,6 @@ var mustache = require('mustache');
 var util = require('util');
 var fs = require('fs');
 var spawn = require('child_process').spawn;
-var ncp = require('ncp').ncp;
 
 //hack to make fs.existsSync work between different node versions
 if ( !fs.existsSync ) {
@@ -78,22 +77,6 @@ var getAvailableNewAppID = function( newappid ) {
     return newappid;
 };
 
-var createLinks = function(name, cb) {
-    var apppath = "../../apps/" + name + "/";
-    var viewpath = process.cwd() + "/views/apps/" + name;
-    var staticpath = process.cwd() + "/static/apps/" + name;
-
-    fs.symlink(apppath + "views", viewpath, function(err) {
-        if (err) {
-            cb(err);
-            return;
-        }
-
-        fs.symlink(apppath + "static", staticpath, function(err) {
-            cb(err);
-        });
-    });
-}
 
 exports.api_app_create_handler = function( app, req, res ) {
 
@@ -120,9 +103,7 @@ exports.api_app_create_handler = function( app, req, res ) {
 
     newappid = getAvailableNewAppID( newappid );
 
-    var path = process.cwd() + "/apps/";
-
-    ncp(path + "boilerplate", path + newappid, function(err) {
+    coderlib.createApp("boilerplate", newappid, function(err, app) {
         if (err) {
             res.json({
                 status: 'error',
@@ -131,49 +112,29 @@ exports.api_app_create_handler = function( app, req, res ) {
             return;
         }
 
-        createLinks(newappid, function(err) {
+        app.metadata = {
+            created: getDateString( new Date() ),
+            modified: getDateString( new Date() ),
+            color: appcolor,
+            author: coderlib.device.owner,
+            name: apptitle,
+            hidden: false,
+            public: false
+        };
+
+        app.save(function(err) {
             if (err) {
                 res.json({
                     status: 'error',
                     error: err
                 });
-                return;
             }
-
-            coderlib.app(newappid, function(err, app) {
-                if (err) {
-                    res.json({
-                        status: 'error',
-                        error: err
-                    });
-                    return;
-                }
-
-                app.metadata = {
-                    created: getDateString( new Date() ),
-                    modified: getDateString( new Date() ),
-                    color: appcolor,
-                    author: coderlib.device.owner,
-                    name: apptitle,
-                    hidden: false,
-                    public: false
-                };
-
-                app.save(function(err) {
-                    if (err) {
-                        res.json({
-                            status: 'error',
-                            error: err
-                        });
-                    }
-                    else {
-                        res.json({
-                            status: 'success',
-                            appname: newappid
-                        });
-                    }
+            else {
+                res.json({
+                    status: 'success',
+                    appname: newappid
                 });
-            });
+            }
         });
     });
 };

@@ -334,31 +334,26 @@ var buildAppList = function(apps){
     };
 
 
-
     //Sort the apps by more recently modified
-    var sortedapps = [];
-    for ( var k in apps ) {
-        sortedapps.push( apps[k] );
-    }
-    sortedapps.sort( function(a,b) {
-        if ( a.ctime < b.ctime ) {
+    apps.sort( function(a, b) {
+        if ( a.metadata.ctime < b.metadata.ctime ) {
             return 1;
-        } else if ( b.ctime < a.ctime ) {
+        } else if ( b.metadata.ctime < a.metadata.ctime ) {
             return -1;
         } else {
             return 0;
         }
     });
 
-    for ( var x=0; x<sortedapps.length; x++ ) {
-        var app = sortedapps[x];
+    for ( var x=0; x<apps.length; x++ ) {
+        var app = apps[x];
         
         var $a = $apptmpl.clone();
-        $a.find('.appname').text( app.appname );
+        $a.find('.appname').text( app.name );
         if ( app.name && app.name !== "" ) {
-            $a.find('.appname').text( app.name );
+            $a.find('.appname').text( app.metadata.name );
         }
-        $a.css('background-color', app.color);
+        $a.css('background-color', app.metadata.color);
         
         $a.hover(
             function() {
@@ -369,11 +364,10 @@ var buildAppList = function(apps){
             }
         );
 
-        $a.click( launchApp( app.appname ) );
-        $a.find('.editbutton').click( editApp( app.appname ) );
+        $a.click( launchApp( app.name ) );
+        $a.find('.editbutton').click( editApp( app.name ) );
         
         $('#applist').append( $a );
-        
     }
 };
 

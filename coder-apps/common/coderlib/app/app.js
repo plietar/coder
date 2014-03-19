@@ -22,6 +22,8 @@ var mustache = require('mustache');
 var util = require('util');
 var fs = require('fs');
 var async = require('async');
+var ncp = require('ncp').ncp;
+var path = require('path');
 
 exports.get_routes = [
     { path: '/api/app/list', handler: 'api_app_list_handler' },
@@ -65,8 +67,9 @@ exports.app = function(name, callback) {
     var viewpath = "apps/" + name + "/";
 
     var userapp = {
+        name: name,
+
         metadata: {
-          appname: name,
           created: getDateString( new Date() ),
           modified: getDateString( new Date() ),
           color: "#1abc9c",
@@ -173,6 +176,44 @@ exports.listApps = function(callback, hidden) {
   });
 }
 
+var createLinks = function(name, cb) {
+    var apppath = "../../apps/" + name + "/";
+    var viewpath = process.cwd() + "/views/apps/" + name;
+    var staticpath = process.cwd() + "/static/apps/" + name;
+
+    fs.symlink(apppath + "views", viewpath, function(err) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        fs.symlink(apppath + "static", staticpath, function(err) {
+            cb(err);
+        });
+    });
+}
+
+exports.createApp = function(template, name, callback) {
+    var appPath = process.cwd() + "/apps/" + name;
+    var templatePath = path.resolve("apps/", template);
+
+    ncp(templatePath, appPath, function(err) {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+
+        createLinks(name, function(err) {
+            if (err) {
+                callback(err, null);
+                return;
+            }
+
+            coderlib.app(name, callback);
+        });
+    });
+}
+
 exports.device = function() {
     var devicefile = process.cwd() + "/device.json";
 
@@ -220,14 +261,8 @@ exports.api_app_list_handler = function( app, req, res ) {
         res.send(500);
       }
       else {
-        var apps = {}
-        for(var i in results)
-        {
-          var m = results[i].metadata;
-          apps[m.appname] = m;
-        }
         res.json({
-          apps: apps
+            apps: results
         });
       }
     });
