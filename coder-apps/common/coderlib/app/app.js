@@ -274,7 +274,7 @@ exports.api_set_device_name = function(app, req, res) {
   if (isValidDeviceName(req.body.name))
   {
     exports.device.name = req.body.name;
-    exports.device.hostname = hostnameFromDeviceName( devicename );
+    exports.device.hostname = hostnameFromDeviceName( req.body.name );
 
     exports.device.save(function(err) {
       if (err)
