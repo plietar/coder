@@ -7,7 +7,7 @@ exports.post_routes = [
 ];
 
 
-exports.index_handler = function( req, res ) {
+exports.index_handler = function( app, req, res ) {
     res.render( app.view() );
 };
 
