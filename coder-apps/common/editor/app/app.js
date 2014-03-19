@@ -90,10 +90,10 @@ exports.api_getcode_handler = function( app, req, res, pathmatches ) {
         return;
     }
     var outdata = {
-        htmldata: getFile( path + '/views/apps/' + apptoedit + '/index.html' ),
-        jsdata:  getFile(  path + '/static/apps/' + apptoedit + '/js/index.js' ),
-        cssdata: getFile( path + '/static/apps/' + apptoedit + '/css/index.css' ),
-        appdata: getFile( path + '/apps/' + apptoedit + '/app.js' )
+        htmldata: getFile( path + '/apps/' + apptoedit + '/views/index.html' ),
+        jsdata:   getFile( path + '/apps/' + apptoedit + '/static/js/index.js' ),
+        cssdata:  getFile( path + '/apps/' + apptoedit + '/static/css/index.css' ),
+        appdata:  getFile( path + '/apps/' + apptoedit + '/app/app.js' )
     };
 
     res.json( outdata );
@@ -119,7 +119,7 @@ exports.api_media_remove_handler = function( app, req, res ) {
         return;
     }
     
-    var fpath = process.cwd() + '/static/apps/' + appname + '/media/' + fname;
+    var fpath = process.cwd() + '/apps/' + appname + '/static/media/' + fname;
     util.log("MEDIA DELETE: " + fpath );
     err = fs.unlinkSync( fpath );
     if ( !err ) {
@@ -149,7 +149,7 @@ exports.api_media_upload_handler = function( app, req, res ) {
                     res.json( {status: 'error', error: "couldn't read file"} );
                     return;
                 }
-                var path = process.cwd() + '/static/apps/' + appname + '/media/' + fname;
+                var path = process.cwd() + '/apps/' + appname + '/static/media/' + fname;
                 fs.writeFile(path, data, function (err) {
                     if ( !err ) {
                         res.json({ 
@@ -188,13 +188,13 @@ exports.api_savecode_handler = function( app, req, res, pathmatches ) {
     var data = req.param('data');
     var filepath = null;
     if ( datatype === 'css' ) {
-        filepath = path + '/static/apps/' + apptoedit + '/css/index.css'
+        filepath = path + '/apps/' + apptoedit + '/static/css/index.css'
     } else if ( datatype === 'html' ) {
-        filepath = path + '/views/apps/' + apptoedit + '/index.html'
+        filepath = path + '/apps/' + apptoedit + '/views/index.html'
     } else if ( datatype === 'js' ) {
-        filepath = path + '/static/apps/' + apptoedit + '/js/index.js'
+        filepath = path + '/apps/' + apptoedit + '/static/js/index.js'
     } else if ( datatype === 'app' ) {
-        filepath = path + '/apps/' + apptoedit + '/app.js'
+        filepath = path + '/apps/' + apptoedit + '/app/app.js'
     }
 
     coderlib.app(apptoedit, function(err, app) {
@@ -272,7 +272,7 @@ exports.api_savesettings_handler = function( app, req, res, pathmatches ) {
 
 exports.listMedia = function( appname ) {
     var path = process.cwd(); //root application path. different from __dirname
-    var mediadir = path + "/static/apps/" + appname + "/media/";
+    var mediadir = path + "/apps/" + appname + "/static/media/";
     var media = {};
     var files = fs.readdirSync(mediadir);
     for ( var x in files ) {
