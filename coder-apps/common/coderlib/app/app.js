@@ -24,6 +24,7 @@ var fs = require('fs');
 var async = require('async');
 var ncp = require('ncp').ncp;
 var path = require('path');
+var rimraf = require('rimraf');
 
 exports.get_routes = [
     { path: '/api/app/list', handler: 'api_app_list_handler' },
@@ -129,6 +130,20 @@ exports.app = function(name, callback) {
             if (!name)
                 name = "index";
             return viewpath + name;
+        },
+
+        remove: function(cb) {
+            userapp.invalidate();
+            delete appcache[name];
+
+            rimraf(process.cwd() + "/apps/" + name, function (err) {
+                if (err) {
+                    cb(err);
+                }
+                async.each([ process.cwd() + "/views/apps/" + name, process.cwd() + "/static/apps/" + name ], fs.unlink, function(err) {
+                    cb (err);
+                });
+            });
         }
     }
 

@@ -293,45 +293,30 @@ exports.api_app_remove_handler = function( app, req, res, pathmatches ) {
         return;
     }
 
-    var path = process.cwd();
-    if ( !fs.existsSync( path + '/apps/' + apptoremove + '/app.js' ) ) {
-        res.json({
-            status: "error",
-            error: "Application doesn't exist"
-        });
-        return;        
-    }
-    
-    try { forceRemoveDir( path + '/static/apps/' + apptoremove ); } catch (e) {}
-    try { forceRemoveDir( path + '/views/apps/' + apptoremove ); } catch (e) {}
-    try { forceRemoveDir( path + '/apps/' + apptoremove ); } catch (e) {}
-
-    res.json({
-        status: "success",
-        data: "Application " + apptoremove + " removed."
+    coderlib.app(apptoremove, function(err, app) {
+        if (err) {
+            res.json({
+                status: "error",
+                error: "Application doesn't exist"
+            });
+            return;
+        } else {
+            app.remove(function (err) {
+                if (err) {
+                    res.json({
+                        status: "error",
+                        error: err
+                    });
+                }
+                else {
+                    res.json({
+                        status: "success",
+                        data: "Application " + apptoremove + " removed."
+                    });
+                }
+            });
+        }
     });
-
-};
-
-
-var copyFile = function( from, to ) {
-    //cpdata = fs.readFileSync( from, 'utf-8' );
-    //fs.writeFileSync( to, cpdata, 'utf-8' );
-    cpdata = fs.readFileSync( from );
-    fs.writeFileSync( to, cpdata );
-};
-
-
-var buildFolderStructure = function( appid ) {
-    var path = process.cwd();
-    var success = true;
-    try { fs.mkdirSync( path + '/static/apps/' + appid ); } catch (e) { success = false; }
-    try { fs.mkdirSync( path + '/static/apps/' + appid + '/css' ); } catch (e) { success = false; }
-    try { fs.mkdirSync( path + '/static/apps/' + appid + '/js' ); } catch (e) { success = false; }
-    try { fs.mkdirSync( path + '/static/apps/' + appid + '/media' ); } catch (e) { success = false; }
-    try { fs.mkdirSync( path + '/views/apps/' + appid ); } catch (e) { success = false; }
-    try { fs.mkdirSync( path + '/apps/' + appid ); } catch (e) { success = false; }
-    return success;
 };
 
 var getDateString = function( d ) {
@@ -342,24 +327,3 @@ var getDateString = function( d ) {
     return d.getFullYear() + "-" + twodigits(d.getMonth()+1) + '-' + twodigits(d.getDate());
 };
 
-//recursively delete a directory
-var forceRemoveDir = function( path ) {
-    util.log( 'PURGING ' + path );
-    try {
-        var contents = fs.readdirSync(path); 
-        for (var i = 0; i < contents.length; i++) {
-            var fp = path + "/" + contents[i];
-            if ( fs.statSync( fp ).isDirectory() ) {
-                forceRemoveDir( fp );
-            } else {
-                //util.log( 'delete ' + fp );
-                fs.unlinkSync( fp );
-            }
-        }
-    }
-    catch(e) 
-    { 
-    }
-    //util.log( 'remove directory ' + path );
-    fs.rmdirSync( path );
-};
