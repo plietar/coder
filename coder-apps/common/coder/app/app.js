@@ -22,6 +22,7 @@ var mustache = require('mustache');
 var util = require('util');
 var fs = require('fs');
 var spawn = require('child_process').spawn;
+var ncp = require('ncp').ncp;
 
 //hack to make fs.existsSync work between different node versions
 if ( !fs.existsSync ) {
@@ -78,6 +79,23 @@ var getAvailableNewAppID = function( newappid ) {
     return newappid;
 };
 
+var createLinks = function(name, cb) {
+    var apppath = "../../apps/" + name + "/";
+    var viewpath = process.cwd() + "/views/apps/" + name;
+    var staticpath = process.cwd() + "/static/apps/" + name;
+
+    fs.symlink(apppath + "views", viewpath, function(err) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        fs.symlink(apppath + "static", staticpath, function(err) {
+            cb(err);
+        });
+    });
+}
+
 exports.api_app_create_handler = function( app, req, res ) {
 
     var apptitle = req.param('app_title');
@@ -102,27 +120,63 @@ exports.api_app_create_handler = function( app, req, res ) {
     }
 
     newappid = getAvailableNewAppID( newappid );
-    
-    buildFolderStructure( newappid );
-    cloneApp( 'boilerplate', newappid );
 
-    var metainfo = {
-        created: getDateString( new Date() ),
-        modified: getDateString( new Date() ),
-        color: appcolor,
-        author: coderlib.device.owner,
-        name: apptitle,
-        hidden: false,
-        public: false
-    };
-    var metapath = process.cwd() + '/apps/' + newappid + '/meta.json';
-    fs.writeFileSync(  metapath, JSON.stringify(metainfo, null, 4), 'utf8' );
+    var path = process.cwd() + "/apps/";
 
-    res.json({
-        status: 'success',
-        appname: newappid
+    ncp(path + "boilerplate", path + newappid, function(err) {
+        if (err) {
+            res.json({
+                status: 'error',
+                error: err
+            });
+            return;
+        }
+
+        createLinks(newappid, function(err) {
+            if (err) {
+                res.json({
+                    status: 'error',
+                    error: err
+                });
+                return;
+            }
+
+            coderlib.app(newappid, function(err, app) {
+                if (err) {
+                    res.json({
+                        status: 'error',
+                        error: err
+                    });
+                    return;
+                }
+
+                app.metadata = {
+                    created: getDateString( new Date() ),
+                    modified: getDateString( new Date() ),
+                    color: appcolor,
+                    author: coderlib.device.owner,
+                    name: apptitle,
+                    hidden: false,
+                    public: false
+                };
+
+                app.save(function(err) {
+                    if (err) {
+                        res.json({
+                            status: 'error',
+                            error: err
+                        });
+                    }
+                    else {
+                        res.json({
+                            status: 'success',
+                            appname: newappid
+                        });
+                    }
+                });
+            });
+        });
     });
-
 };
 
 exports.export_download_handler = function( app, req, res, pathmatches ) {
@@ -429,23 +483,6 @@ var buildFolderStructure = function( appid ) {
     try { fs.mkdirSync( path + '/apps/' + appid ); } catch (e) { success = false; }
     return success;
 };
-
-var cloneApp = function( fromapp, toapp ) {
-    var path = process.cwd();
-    var cpdata = "";
-
-    //app node.js file
-    copyFile( path + '/apps/' + fromapp + '/app.js', path + '/apps/' + toapp + '/app.js' );
-    //html view
-    copyFile( path + '/views/apps/' + fromapp + '/index.html', path + '/views/apps/' + toapp + '/index.html' );
-    //css data
-    copyFile( path + '/static/apps/' + fromapp + '/css/index.css', path + '/static/apps/' + toapp + '/css/index.css' );
-    //index.js file
-    copyFile( path + '/static/apps/' + fromapp + '/js/index.js', path + '/static/apps/' + toapp + '/js/index.js' );
-
-    //TODO: not currently cloning anything in media directory.
-};
-
 
 var getDateString = function( d ) {
     var now = new Date();

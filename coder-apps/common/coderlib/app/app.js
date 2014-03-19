@@ -51,8 +51,6 @@ var getDateString = function( d ) {
 };
 
 
-
-
 var appdir = process.cwd() + "/apps/";
 var appcache = {}
 
@@ -62,8 +60,8 @@ exports.app = function(name, callback) {
       return;
     }
 
-    var metafile = appdir + name + "/meta.json";
-    var loadpath = appdir + name + "/app";
+    var metafile = appdir + name + "/app/meta.json";
+    var loadpath = appdir + name + "/app/app";
     var viewpath = "apps/" + name + "/";
 
     var userapp = {

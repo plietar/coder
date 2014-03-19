@@ -19,16 +19,8 @@ app=$1
 base=$2
 from=$3
 
-mkdir "$base/apps/$app"
-mkdir "$base/static/apps/$app"
-mkdir "$base/static/apps/$app/js"
-mkdir "$base/static/apps/$app/css"
-mkdir "$base/static/apps/$app/media"
-mkdir "$base/views/apps/$app"
+cp -RT $from/$app $base/apps/$app
 
-cp $from/$app/app/* $base/apps/$app/
-cp $from/$app/views/* $base/views/apps/$app/
-cp $from/$app/static/js/* $base/static/apps/$app/js/
-cp $from/$app/static/css/* $base/static/apps/$app/css/
-cp $from/$app/static/media/* $base/static/apps/$app/media/
+ln -sTf ../../apps/$app/views $base/views/apps/$app
+ln -sTf ../../apps/$app/static $base/static/apps/$app
 

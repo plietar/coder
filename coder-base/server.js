@@ -35,7 +35,9 @@ var cookie = require('cookie');
 var connect = require('connect');
 
 global.config = require('./config');
-global.coderlib = require('./apps/coderlib/app');
+global.coderlib = require('./apps/coderlib/app/app');
+
+var auth = require('./apps/auth/app/app');
 
 var apphandler = function( req, res, appdir ) {
     var appname = req.params[0];
@@ -49,7 +51,6 @@ var apphandler = function( req, res, appdir ) {
 
     util.log( req.route.method + ": " + apppath + " " + appname );
 
-    auth = require(appdir + "auth" + "/app");
     coderlib.app(appname, function(err, app) {
         if (err) {
             res.status( 404 );
@@ -220,7 +221,6 @@ var initSocketIO = function( server ) {
             }
             if ( data.appid !== undefined && data.appid.match(/^\w+$/) && data.key !== undefined ) {
                 var appname = data.appid;
-                var auth = require( __dirname + "/apps/auth/app" );
 
                 coderlib.app(appname, function(err, app) {
                     if (err) {
