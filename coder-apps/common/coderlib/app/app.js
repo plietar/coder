@@ -70,7 +70,8 @@ exports.app = function(name, callback) {
     }
 
     var metafile = appdir + name + "/meta.json";
-    var loadpath = appdir + name + "/app"
+    var loadpath = appdir + name + "/app";
+    var viewpath = "apps/" + name + "/";
 
     var userapp = {
         metadata: {
@@ -137,6 +138,12 @@ exports.app = function(name, callback) {
                 }
                 delete require.cache[loadpath + ".js"];
             }
+        },
+
+        view: function(name) {
+            if (!name)
+                name = "index";
+            return viewpath + name;
         }
     }
 

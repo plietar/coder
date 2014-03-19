@@ -53,7 +53,7 @@ exports.on_destroy = function() {
 };
 
 exports.index_handler = function( app, req, res ) {
-    res.render( exports.settings.viewpath + '/index' );
+    res.render( app.view() );
 };
 
 var getAppIDFromTitle = function( apptitle ) {

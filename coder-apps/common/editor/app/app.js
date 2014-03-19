@@ -60,7 +60,7 @@ exports.index_handler = function( app, req, res, pathmatches ) {
         return;
     }
 
-    res.render( exports.settings.viewpath + '/index', tmplvars );
+    res.render( app.view(), tmplvars );
 };
 
 

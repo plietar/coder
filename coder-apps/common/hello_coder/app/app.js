@@ -46,7 +46,7 @@ exports.post_routes = [
 
 
 exports.index_handler = function( app, req, res ) {
-    res.render( exports.settings.viewpath + '/index' );
+    res.render( app.view() );
 };
 
 exports.on_destroy = function() {

@@ -115,7 +115,7 @@ exports.addpassword_handler = function( app, req, res ) {
 
     //only allow this step if they have not yet set a password
     if ( !exports.hasPassword() ) {
-        res.render( exports.settings.viewpath + '/index', tmplvars );
+        res.render( app.view(), tmplvars );
     } else {
         res.redirect('/app/auth/login');
     }
@@ -127,7 +127,7 @@ exports.changepassword_handler = function( app, req, res ) {
 
     //only allow this step if they are authenticated
     if ( exports.isAuthenticated(req) ) {
-        res.render( exports.settings.viewpath + '/index', tmplvars );
+        res.render( app.view(), tmplvars );
     } else {
         res.redirect('/app/auth/login');
     }
@@ -139,7 +139,7 @@ exports.configure_handler = function( app, req, res ) {
 
     //only allow this step if they are authenticated or have not yet set a password
     if ( exports.isAuthenticated(req) || !exports.hasPassword() ) {
-        res.render( exports.settings.viewpath + '/index', tmplvars );
+        res.render( app.view(), tmplvars );
     } else {
         res.redirect('/app/auth/login');
     }
@@ -314,7 +314,7 @@ exports.login_handler = function( app, req, res ) {
 
     //TODO - should this log you out automatically?
     req.session.authenticated = false;
-    res.render( exports.settings.viewpath + '/index', tmplvars );
+    res.render( app.view(), tmplvars );
 };
 
 exports.logout_handler = function( app, req, res ) {
@@ -322,7 +322,7 @@ exports.logout_handler = function( app, req, res ) {
     tmplvars['page_mode'] = "logout";
 
     req.session.authenticated = false;
-    res.render( exports.settings.viewpath + '/index', tmplvars );
+    res.render( app.view(), tmplvars );
 };
 
 exports.api_login_handler = function( app, req, res ) {
