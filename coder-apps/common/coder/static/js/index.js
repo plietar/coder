@@ -248,7 +248,6 @@ var saveSettings = function() {
         $.post('/app/coderlib/api/device/name',
             { 'name': $('#coder_name').val() },
             function(d) {
-                //console.log( d );
                 if ( d.status === 'success' ) {
                     device_name = d.name;
                     $("#coder_logo").text( device_name );
@@ -264,9 +263,8 @@ var saveSettings = function() {
             return;
         }
         $.post('/app/coderlib/api/device/owner',
-            { 'coder_owner': $('#coder_ownername').val() },
+            { 'owner': $('#coder_ownername').val() },
             function(d) {
-                //console.log( d );
                 if ( d.status === 'success' ) {
                     coder_owner = d.owner;
                 }
@@ -289,9 +287,8 @@ var saveSettings = function() {
         
         
         $.post('/app/coderlib/api/device/color',
-            { 'coder_color': hexcolor },
+            { 'color': hexcolor },
             function(d) {
-                //console.log( d );
                 if ( d.status === 'success' ) {
                     coder_color = d.color;
                     $("#coder_nav").css('background-color', coder_color);

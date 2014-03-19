@@ -315,7 +315,7 @@ exports.api_set_device_color = function(app, req, res) {
       if (err)
         res.json({ status: 'error', error: err });
       else
-        res.json({ status: 'success', color: exports.device.coder_color });
+        res.json({ status: 'success', color: exports.device.color });
     });
   }
   else

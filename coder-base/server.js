@@ -60,9 +60,9 @@ var apphandler = function( req, res, appdir ) {
         }
         userapp = app.require();
 
-        res.locals["app_name"]    = name;
-        res.locals["app_url"]     = "/app/" + name;
-        res.locals["static_url"]  = "/static/apps/" + name;
+        res.locals["app_name"]    = appname;
+        res.locals["app_url"]     = "/app/" + appname;
+        res.locals["static_url"]  = "/static/apps/" + appname;
         res.locals["device_name"] = coderlib.device.name;
         res.locals["coder_owner"] = coderlib.device.owner;
         res.locals["coder_color"] = coderlib.device.color;
