@@ -324,7 +324,7 @@ var setupEditor = function( panelid, editorid, data, serverid, editmode ) {
                         metadata: JSON.stringify(metadata)
                     },
                     function(data) {
-                        if ( data.result === "saved" ) {
+                        if ( data.status === "success" ) {
                             revert = data.data;
                             refreshChangedState();
                             if ( console.clear ) {
@@ -333,7 +333,7 @@ var setupEditor = function( panelid, editorid, data, serverid, editmode ) {
                             $("#app").attr('src', '/app/' + edit_appname + '?ineditor');
 
                         } else {
-                            alert( "error: " + data.result );
+                            alert( "error: " + data.error );
                             refreshChangedState();
                         }
                     }

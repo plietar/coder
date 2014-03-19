@@ -63,9 +63,19 @@ exports.api_metadata_get_handler = function( app, req, res, pathmatches ) {
         return;
     }
     
-    res.json({
-        appname: apptoedit,
-        metadata: getMetaInfo( apptoedit )
+
+    coderlib.app(apptoedit, function(err, app) {
+        if (!err) {
+            res.json({
+                status: 'success',
+                appname: apptoedit,
+                metadata: app.metadata
+            });
+        } else {
+            res.json({
+                status: 'error'
+            });
+        }
     });
 };
 
@@ -174,81 +184,58 @@ exports.api_savecode_handler = function( app, req, res, pathmatches ) {
         return;
     }
 
-    try {
-        var datatype = req.param('type');
-        var data = req.param('data');
-        var err = "";
-        
-        var metainfo = getMetaInfo(apptoedit);
-        try {
-            metainfo.modified = getDateString( new Date() );
-            //??anything to update from this??
-            //var metadata = JSON.parse(req.param('metadata'));
-            
-        } catch( e ) {
-        }
-                
-        if ( datatype === 'css' ) {
-            err = fs.writeFileSync( path + '/static/apps/' + apptoedit + '/css/index.css', data, 'utf8' );
-        } else if ( datatype === 'html' ) {
-            err = fs.writeFileSync( path + '/views/apps/' + apptoedit + '/index.html', data, 'utf8' );
-        } else if ( datatype === 'js' ) {
-            err = fs.writeFileSync( path + '/static/apps/' + apptoedit + '/js/index.js', data, 'utf8' );
-        } else if ( datatype === 'app' ) {
-            err = fs.writeFileSync( path + '/apps/' + apptoedit + '/app.js', data, 'utf8' );
+    var datatype = req.param('type');
+    var data = req.param('data');
+    var filepath = null;
+    if ( datatype === 'css' ) {
+        filepath = path + '/static/apps/' + apptoedit + '/css/index.css'
+    } else if ( datatype === 'html' ) {
+        filepath = path + '/views/apps/' + apptoedit + '/index.html'
+    } else if ( datatype === 'js' ) {
+        filepath = path + '/static/apps/' + apptoedit + '/js/index.js'
+    } else if ( datatype === 'app' ) {
+        filepath = path + '/apps/' + apptoedit + '/app.js'
+    }
+
+    coderlib.app(apptoedit, function(err, app) {
+        if (err) {
+            res.json({
+                status: 'error'
+            });
+            return;
         }
 
-        if ( err && err !== "" ) {
-            res.json({
-                result: "error",
-                type: datatype,
-                data: data,
-                metadata: metainfo,
-                error: err
-            });
-        }
-        
-
-        
-        err = fs.writeFileSync( path + '/apps/' + apptoedit + '/meta.json', JSON.stringify(metainfo, null, 4), 'utf8' );
-        
-        
-        if ( err && err !== "" ) {
-            res.json({
-                result: "metadata error",
-                type: datatype,
-                data: data,
-                metadata: metainfo,
-                error: err
-            });
-        } else {
-            res.json({
-                result: "saved",
-                type: datatype,
-                data: data,
-                metadata: metainfo,
-            });
-            
-            util.log('app: ' + apptoedit + ' saved. flushing cache.');
-            //flush app from cache
-            var cached = require.cache[path + '/apps/' + apptoedit + '/app.js'];
-            if ( cached ) {
-                var theapp = require(path + '/apps/' + apptoedit + '/app');
-                if ( theapp.on_destroy ) {
-                    theapp.on_destroy();
-                }
-                delete require.cache[path + '/apps/' + apptoedit + '/app.js'];
+        app.metadata.modified = getDateString( new Date() );
+        app.save(function(err) {
+            if (err) {
+                res.json({
+                    status: 'error'
+                });
+                return;
             }
-        }
-                
 
-    } catch ( e ) {
-        res.json({
-            result: "error saving"
+            fs.writeFile( filepath, data, 'utf8', function(err) {
+                if (err) {
+                    res.json({
+                        status: 'error'
+                    });
+                    return;
+                }
+
+
+                util.log('app: ' + apptoedit + ' saved. flushing cache.');
+
+                app.invalidate();
+
+                res.json({
+                    status: "success",
+                    type: datatype,
+                    data: data,
+                    metadata: app.metadata,
+                });
+            });
         });
-    }   
-            
-
+    });
 };
 
 
@@ -262,58 +249,24 @@ exports.api_savesettings_handler = function( app, req, res, pathmatches ) {
         return;
     }
     
-    var metadata = getMetaInfo( apptoedit );
     var newmetadata = JSON.parse(req.param('metadata'));
 
-    var idchanged = (metadata.name !== newmetadata.name);
-    var newappid = apptoedit;
-    if ( idchanged ) {
-        util.log( "Name Change: " + newmetadata.name );
-        newappid = newmetadata.name.toLowerCase();
-        newappid = newappid.replace(/\./g, "_");
-        newappid = newappid.replace(/[^\w]/g, "_");
-        newappid = newappid.replace(/_+/g, "_");
-        
-        if ( newappid === apptoedit ) {
-            idchanged = false;
-        } else {
-            //this is a real id change
-            var idavailable = false;
-            var iteration = 0;
-            var appdir = process.cwd() + "/apps/";
-            var allfiles = fs.readdirSync(appdir);
-            while ( !idavailable ) {
-                var potential = newappid;
-                if ( iteration > 0 ) {
-                    potential = potential + '_' + iteration;
-                }
-                if ( allfiles.indexOf( potential ) >= 0 ) {
-                    iteration++;
-                } else {
-                    newappid = potential;
-                    idavailable = true;
-                }
+    coderlib.app(apptoedit, function(err, app) {
+        for (attr in app.metadata) {
+            if (typeof newmetadata[attr] != 'undefined') {
+                app.metadata[attr] = newmetadata[attr];
             }
         }
-    }
 
-    metadata.modified = getDateString( new Date() );
-    metadata.color = newmetadata.color;
-    metadata.author = newmetadata.author;
-    metadata.name = newmetadata.name;
+        app.metadata.modified = getDateString( new Date() );
 
-    err = fs.writeFileSync( path + '/apps/' + apptoedit + '/meta.json', JSON.stringify(metadata, null, 4), 'utf8' );
-
-    if ( idchanged && newappid !== "" ) {
-        util.log( "APP RENAME: " + apptoedit + " > " + newappid);
-        moveProject( apptoedit, newappid );
-    }
-
-    res.json({
-        metadata: metadata,
-        appname: newappid
+        app.save(function(err) {
+            res.json({
+                metadata: app.metadata,
+                appname: apptoedit
+            });
+        });
     });
-
 };
 
 
@@ -342,29 +295,6 @@ var moveProject = function( fromid, toid ) {
     fs.renameSync( path + "/apps/" + fromid, path + "/apps/" + toid );
     fs.renameSync( path + "/static/apps/" + fromid, path + "/static/apps/" + toid );
     fs.renameSync( path + "/views/apps/" + fromid, path + "/views/apps/" + toid );
-};
-
-var getMetaInfo = function( appname ) {
-    var appdir = process.cwd() + "/apps/" + appname;
-    var metainfo = {
-        created: getDateString( new Date() ),
-        modified: getDateString( new Date() ),
-        color: "#66ddaa",
-        author: "",
-        name: "",
-        hidden: false,
-    };
-    try {
-        metafile = JSON.parse(fs.readFileSync( appdir + "/meta.json", 'utf-8' ));
-        metainfo.created = metafile.created;
-        metainfo.modified = metafile.modified;
-        metainfo.color = metafile.color ? metafile.color : metainfo.color;
-        metainfo.author = metafile.author ? metafile.author : metainfo.author;
-        metainfo.name = metafile.name ? metafile.name : metainfo.name;
-        metainfo.hidden = (typeof metafile.hidden !== 'undefined') ? metafile.hidden : metainfo.hidden;
-    } catch( e ) {
-    }
-    return metainfo;
 };
 
 var getFile = function( fpath ) {
