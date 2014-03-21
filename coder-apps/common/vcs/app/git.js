@@ -253,5 +253,54 @@ Git.prototype.cat_file = function(/* sha, type, options, callback */) {
     });
 }
 
+Git.prototype.parseCommit = function(sha, callback) {
+    this.cat_file(sha, "commit", function(err, data) {
+        if (err) return callback(err, null);
+        var commit = {};
+        commit.parents = [];
+
+        var i = 0;
+        while (i < data.length) {
+            var j = data.indexOf("\n", i);
+            if (j == -1)
+                j = data.length;
+
+            if (i == j)
+                break;
+
+            var line = data.slice(i, j);
+
+            var match;
+            if(match = /^tree ([0-9a-f]{40})$/.exec(line))
+                commit.tree = match[1];
+            else if(match = /^parent ([0-9a-f]{40})$/.exec(line))
+                commit.parents.push(match[1]);
+            else if(match = /^author (.+) <(.*)> (\d+) ([+-])\d{4}$/.exec(line))
+                commit.author = {
+                    name: match[1],
+                    email: match[2],
+                    date: new Date(parseInt(match[3]))
+                }
+            else if(match = /^committer (.+) <(.*)> (\d+) ([+-])\d{4}$/.exec(line))
+                commit.committer = {
+                    name: match[1],
+                    email: match[2],
+                    date: new Date(parseInt(match[3]))
+                }
+            else
+            {
+                callback("Wrong commit object format");
+                return;
+            }
+
+            i = j+1;
+        }
+
+        commit.message = data.slice(i + 1);
+
+        callback(null, commit);
+    });
+};
+
 module.exports = Git;
 
