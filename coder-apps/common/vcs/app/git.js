@@ -67,6 +67,10 @@ Git.prototype.git = function(/* command, args, options, callback */)
     return child;
 };
 
+Git.prototype.init = function(callback) {
+    this.git("init", this.path, { cwd: process.cwd() }, callback);
+};
+
 Git.prototype.status = function(callback) {
     var result = Object.create(null);
 
