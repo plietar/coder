@@ -4,6 +4,7 @@ var byline = require('byline');
 var async = require('async');
 var util = require('util');
 var path = require('path');
+require('buffertools').extend()
 
 var Git = function(p)
 {
@@ -301,6 +302,43 @@ Git.prototype.parseCommit = function(sha, callback) {
         callback(null, commit);
     });
 };
+
+Git.prototype.parseTree = function(sha, callback) {
+    this.cat_file(sha, "tree", {encoding: 'binary'}, function(err, data) {
+        if (err) return callback(err, null);
+
+        data = Buffer(data, "binary");
+        var results = Object.create(null);
+
+        var i = 0;
+        while (i < data.length) {
+            var j = data.indexOf(" ", i);
+            var k = data.indexOf("\0", i);
+
+            var mode = data.toString("utf-8", i, j);
+            var name = data.toString("utf-8", j + 1, k);
+            var object = data.slice(k+1, k+21).toString('hex');
+
+            var type;
+            if (mode == "160000")
+                type = "commit";
+            else if (mode == "40000")
+                type = "tree";
+            else
+                type = "blob";
+
+            results[name] = {
+                mode: mode,
+                type: type,
+                object: object
+            }
+
+            i = k + 21;
+        }
+        callback(null, results);
+    });
+};
+
 
 module.exports = Git;
 
