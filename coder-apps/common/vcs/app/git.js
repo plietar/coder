@@ -33,7 +33,8 @@ Git.prototype.git = function(/* command, args, options, callback */)
     var child = spawn("git", gitargs, { cwd: options.cwd, env: options.env});
 
     child.stderr.setEncoding('utf8');
-    child.stdout.setEncoding(options.encoding);
+    if (options.encoding)
+        child.stdout.setEncoding(options.encoding);
 
     if (callback) {
         var called = false;
@@ -218,4 +219,39 @@ Git.prototype.commit = function(/* message, options, callback */) {
         }
     ], callback);
 };
+
+Git.prototype._cat_file = function(/* sha, type, options, callback */) {
+    var object, type = "-p", options = {}, callback;
+    var args = Array.prototype.slice.call(arguments);
+
+    object = args.shift();
+    if (typeof args[0] === "string")
+        type = args.shift();
+    if (typeof args[0] === "object")
+        options = args.shift();
+
+    callback = args.shift();
+
+    var bufs = [];
+
+    var child = this.git("cat-file", type, object, {encoding: options.encoding}, callback);
+    return child.stdout;
+};
+
+Git.prototype.cat_file = function(/* sha, type, options, callback */) {
+    var data = [];
+
+    var callback = arguments[arguments.length - 1];
+    arguments[arguments.length - 1] = function(err) {
+        callback(err, err ? null : data.join(""));
+    };
+
+    var stdout = this._cat_file.apply(this, arguments)
+
+    stdout.on('data', function(d) {
+        data.push(d);
+    });
+}
+
+module.exports = Git;
 
