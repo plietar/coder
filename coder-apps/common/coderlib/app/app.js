@@ -69,6 +69,7 @@ exports.app = function(name, callback) {
 
     var userapp = {
         name: name,
+        rootPath: appdir + name,
 
         metadata: {
           created: getDateString( new Date() ),
