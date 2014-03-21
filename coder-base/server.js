@@ -35,9 +35,9 @@ var cookie = require('cookie');
 var connect = require('connect');
 
 global.config = require('./config');
-global.coderlib = require('./apps/coderlib/app/app');
+global.coderlib = require('./apps/coderlib/app/index');
 
-var auth = require('./apps/auth/app/app');
+var auth = require('./apps/auth/app/index');
 
 var apphandler = function( req, res, appdir ) {
     var appname = req.params[0];
