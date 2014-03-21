@@ -26,4 +26,5 @@ base=$1
 ./install_app.sh game2d $base ./common/
 ./install_app.sh hello_coder $base ./common/
 ./install_app.sh space_rocks_ $base ./common/
+./install_app.sh vcs $base ./common/
 
