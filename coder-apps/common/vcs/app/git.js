@@ -3,12 +3,12 @@ var spawn = require('child_process').spawn;
 var byline = require('byline');
 var async = require('async');
 var util = require('util');
-var path = require('path');
+var pathutil = require('path');
 require('buffertools').extend()
 
 var Git = function(p)
 {
-    this.path = path.resolve(p);
+    this.path = pathutil.resolve(p);
 };
 
 Git.prototype.git = function(/* command, args, options, callback */)
@@ -339,6 +339,30 @@ Git.prototype.parseTree = function(sha, callback) {
     });
 };
 
+Git.prototype.findBlob = function(sha, path, callback) {
+    var self = this;
+    if (typeof path === "string")
+        path = pathutil.resolve('/', path).split('/');
+
+    while (path[0] == "" || path[0] == ".")
+        path.shift();
+
+
+    var name = path.shift();
+    this.parseTree(sha, function(err, files) {
+        if (err) return callback(err, null);
+
+        if (!files[name])
+            return callback("Path not found", null);
+
+        if (files[name].type == "blob")
+            return callback(null, files[name]);
+        else if (files[name].type == "tree")
+            return self.findBlob(files[name].object, path, callback);
+        else
+            return callback("Unsupported object type", null);
+    });
+};
 
 module.exports = Git;
 
