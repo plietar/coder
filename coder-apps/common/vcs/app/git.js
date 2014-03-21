@@ -12,12 +12,15 @@ var Git = function(p)
 
 Git.prototype.git = function(/* command, args, options, callback */)
 {
-    var command, gitargs = [], options = {}, callback = null;
+    var gitargs = [], options = {}, callback = null;
     var args = Array.prototype.slice.call(arguments);
 
-    command = args.shift();
+    gitargs.push(args.shift());
+    while (typeof args[0] === "string")
+        gitargs.push(args.shift());
     if (util.isArray(args[0]))
-        gitargs = args.shift();
+        gitargs = gitargs.concat(args.shift());
+
     if (typeof args[0] === "object")
         options = args.shift();
     if (typeof args[0] === "function")
@@ -27,7 +30,6 @@ Git.prototype.git = function(/* command, args, options, callback */)
     options.env = options.env || {};
     options.cwd = options.cwd || this.path;
 
-    gitargs.unshift(command);
     var child = spawn("git", gitargs, { cwd: options.cwd, env: options.env});
 
     child.stderr.setEncoding('utf8');
@@ -68,7 +70,7 @@ Git.prototype.git = function(/* command, args, options, callback */)
 Git.prototype.status = function(callback) {
     var result = Object.create(null);
 
-    var child = this.git("status", ["--porcelain"], function(err) {
+    var child = this.git("status", "--porcelain", function(err) {
         if (err) callback(err, null);
         else callback(null, result);
     });
@@ -81,23 +83,23 @@ Git.prototype.status = function(callback) {
 };
 
 Git.prototype.addAll = function(callback) {
-    this.git("add", ["--all", ":/"], callback);
+    this.git("add", "--all", ":/", callback);
 };
 
 Git.prototype.update_ref = function(/* ref, value, oldvalue, callback */) {
-    var ref, value, oldvalue, callback;
+    var ref, value, oldvalue = null, callback;
     var args = Array.prototype.slice.call(arguments);
 
     ref = args.shift();
     value = args.shift();
-    if (typeof args[0] === "string")
+    if (typeof args[0] === "string" || args[0] === null)
         oldvalue = args.shift();
     callback = args.shift();
 
     if (oldvalue !== null)
-        this.git("update-ref", [ref, value, oldvalue], callback);
+        this.git("update-ref", ref, value, oldvalue, callback);
     else
-        this.git("update-ref", [ref, value], callback);
+        this.git("update-ref", ref, value, callback);
 };
 
 
@@ -134,10 +136,10 @@ Git.prototype.commit_tree = function(/* tree, message, parents, options, callbac
 
     var result = null;
 
-    var gitargs = [tree];
+    var parentFlags = [];
     for (var k in parents) {
-        gitargs.push("-p");
-        gitargs.push(parents[k]);
+        parentFlags.push("-p");
+        parentFlags.push(parents[k]);
     }
 
     var env = {};
@@ -150,7 +152,7 @@ Git.prototype.commit_tree = function(/* tree, message, parents, options, callbac
         env.GIT_COMMITTER_EMAIL = options.committer.email;
     }
 
-    var child = this.git("commit-tree", gitargs, {env: env}, function(err) {
+    var child = this.git("commit-tree", tree, parentFlags, {env: env}, function(err) {
         if (err) callback(err, null);
         else callback(null, result);
     });
