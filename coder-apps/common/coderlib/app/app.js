@@ -42,6 +42,63 @@ App.prototype._load = function(data) {
     }
 }
 
+App.prototype.exec = function (req, res, path) {
+    var self = this;
+    res.locals["app_name"]    = this.name;
+    res.locals["app_url"]     = this.appURL;
+    res.locals["static_url"]  = this.staticURL;
+    res.locals["device_name"] = coderlib.device.name;
+    res.locals["coder_owner"] = coderlib.device.owner;
+    res.locals["coder_color"] = coderlib.device.color;
+
+
+    //Redirect to sign-in for unauthenticated users
+    var user = coderlib.auth.isAuthenticated(req, res);
+    if ( !user && !this.metadata.public) {
+        util.log( "redirect: " + '/app/auth' );
+        res.redirect('/app/auth');
+        return;
+    }
+
+    this.require(function(err, userapp) {
+        if (err) {
+            res.send(500);
+            return;
+        }
+
+        var routes = [];
+        if ( req.route.method === 'get' ) {
+            routes = userapp.get_routes;
+        } else if ( req.route.method === 'post' ) {
+            routes = userapp.post_routes;
+        }
+
+        if ( routes ) {
+            var found = false;
+            for ( var i in routes ) {
+                route = routes[i];
+                if ( route['path'] instanceof RegExp ) {
+                    var match = route['path'].exec( path );
+                    if ( match ) {
+                        userapp[route['handler']]( self, req, res, match );
+                        found = true;
+                        break;
+                    }
+
+                } else if ( route['path'] === path ) {
+                    userapp[route['handler']]( self, req, res );
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( !found ) {
+                res.send(404);
+            }
+        }
+    });
+}
+
 var LocalApp = exports.LocalApp = function(name) {
     LocalApp.super_.call(this, name);
 

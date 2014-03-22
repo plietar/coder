@@ -51,6 +51,8 @@ exports.app       = app.LocalApp.find;
 exports.listApps  = app.LocalApp.list;
 exports.createApp = app.LocalApp.create;
 
+exports.auth      = require('../../auth/app/index');
+
 
 exports.device = function() {
     var devicefile = process.cwd() + "/device.json";

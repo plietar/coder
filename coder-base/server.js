@@ -60,62 +60,7 @@ var apphandler = function( req, res, appdir ) {
             return;
         }
 
-        res.locals["app_name"]    = appname;
-        res.locals["app_url"]     = "/app/" + appname;
-        res.locals["static_url"]  = "/static/apps/" + appname;
-        res.locals["device_name"] = coderlib.device.name;
-        res.locals["coder_owner"] = coderlib.device.owner;
-        res.locals["coder_color"] = coderlib.device.color;
-
-        //Redirect to sign-in for unauthenticated users
-        user = auth.isAuthenticated(req, res);
-        if ( !user && !app.metadata.public) {
-            util.log( "redirect: " + '/app/auth' );
-            res.redirect('/app/auth');
-            return;
-        }
-
-        app.require(function(err, userapp) {
-            if (err) {
-                res.send(500);
-                return;
-            }
-
-            var routes = [];
-            if ( req.route.method === 'get' ) {
-                routes = userapp.get_routes;
-            } else if ( req.route.method === 'post' ) {
-                routes = userapp.post_routes;
-            }
-
-            if ( routes ) {
-                var found = false;
-                for ( var i in routes ) {
-                    route = routes[i];
-                    if ( route['path'] instanceof RegExp ) {
-                        var m = route['path'].exec( apppath );
-                        if ( m ) {
-                            userapp[route['handler']]( app, req, res, m );
-                            found = true;
-                            break;
-                        }
-
-                    } else if ( route['path'] === apppath ) {
-                        userapp[route['handler']]( app, req, res );
-                        found = true;
-                        break;
-                    }
-
-                }
-
-                if ( !found ) {
-                    res.status( 404 );
-                    res.render('404', {
-                        title: 'error'
-                    });
-                }
-            }
-        });
+        app.exec(req, res, apppath);
     });
 };
 
