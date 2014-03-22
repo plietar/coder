@@ -93,7 +93,7 @@ exports.api_getcode_handler = function( app, req, res, pathmatches ) {
         htmldata: getFile( path + '/apps/' + apptoedit + '/views/index.html' ),
         jsdata:   getFile( path + '/apps/' + apptoedit + '/static/js/index.js' ),
         cssdata:  getFile( path + '/apps/' + apptoedit + '/static/css/index.css' ),
-        appdata:  getFile( path + '/apps/' + apptoedit + '/app/main.js' )
+        appdata:  getFile( path + '/apps/' + apptoedit + '/app/index.js' )
     };
 
     res.json( outdata );
@@ -194,7 +194,7 @@ exports.api_savecode_handler = function( app, req, res, pathmatches ) {
     } else if ( datatype === 'js' ) {
         filepath = path + '/apps/' + apptoedit + '/static/js/index.js'
     } else if ( datatype === 'app' ) {
-        filepath = path + '/apps/' + apptoedit + '/app/main.js'
+        filepath = path + '/apps/' + apptoedit + '/app/index.js'
     }
 
     coderlib.app(apptoedit, function(err, app) {
