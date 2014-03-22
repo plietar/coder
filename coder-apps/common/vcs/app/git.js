@@ -176,7 +176,7 @@ Git.prototype.commit_tree = function(/* tree, message, parents, options, callbac
 Git.prototype.rev_parse = function(rev, callback) {
     var result = null;
 
-    var child = this.git("rev-parse", [rev], function(err) {
+    var child = this.git("rev-parse", rev, function(err) {
         if (err) callback(err, null);
         else callback(null, result);
     });

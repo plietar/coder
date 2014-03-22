@@ -1,3 +1,4 @@
+"use strict";
 var async = require("async");
 var util = require("util");
 var Git = require("./git");
@@ -12,11 +13,11 @@ var GitApp = exports = function(name, rev) {
     this.repo = null;
     this.tree = null;
     this.module = null;
-}
+};
 
 util.inherits(GitApp, App);
 
-GitApp.appcache = {}
+GitApp.appcache = {};
 
 GitApp.prototype.load = function(callback) {
     var self = this;
@@ -35,7 +36,7 @@ GitApp.prototype.load = function(callback) {
             callback(null);
         }
     ], callback);
-}
+};
 
 GitApp.prototype.require = function(callback) {
     var self = this;
@@ -61,7 +62,7 @@ GitApp.prototype.require = function(callback) {
             callback(null, m);
         }
     ], callback);
-}
+};
 
 GitApp.find = function(name, rev, callback) {
     callback = callback || function() {};
@@ -81,5 +82,34 @@ GitApp.find = function(name, rev, callback) {
             callback(null, userapp);
         }
     });
-}
+};
+
+GitApp.history = function(name, callback) {
+    var repo;
+    async.waterfall([
+        LocalApp.find.bind(null, name),
+        function(localApp, callback) {
+            repo = new Git(localApp.rootPath);
+            repo.rev_parse("HEAD", callback);
+        },
+        function(revision, callback) {
+            var commits = [];
+
+            (function loadRev(rev) {
+                repo.parseCommit(rev, function(err, commit) {
+                    if (err)
+                        callback(err);
+                    else {
+                        commits.push(commit);
+                        if (commit.parents.length == 0)
+                            callback(null, commits);
+                        else
+                            loadRev(commit.parents[0]);
+                    }
+                });
+            })(revision);
+        }
+    ], callback);
+};
+
 
