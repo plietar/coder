@@ -386,6 +386,6 @@ else
 pingStatusServer();
 
 process.on('uncaughtException', function(err) {
-    console.log('WARNING: unhandled exception: ' + err );
+    console.log('WARNING: unhandled exception: ' + err.stack );
 });
 
