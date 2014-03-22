@@ -12,7 +12,8 @@ var isVersionned = function(app, callback) {
 
 exports.get_routes = [
     { path:'/', handler:'index_handler' },
-    { path:/^\/view\/(\w+)\/([0-9a-f]+)\/static\/(.+)$/, handler: 'static_handler' },
+    { path:/^\/app\/(\w+)\/([0-9a-f]+)(\/.*)?$/, handler: 'app_handler' },
+    { path:/^\/static\/(\w+)\/([0-9a-f]+)\/(.+)$/, handler: 'static_handler' },
     { path:/^\/log\/(\w+)\/?$/, handler:'log_handler' }
 ];
 
@@ -45,7 +46,6 @@ exports.static_handler = function( app, req, res, match ) {
     ], function(err, data) {
         if (err)
         {
-            console.log(err);
             res.send(404);
         }
         else
@@ -56,12 +56,28 @@ exports.static_handler = function( app, req, res, match ) {
     });
 };
 
+exports.app_handler = function( app, req, res, match ) {
+    var appname = match[1];
+    var rev = match[2];
+    var path = match[3] || "/";
+
+    var repo;
+
+    GitApp.find(appname, rev, function(err, app) {
+        if (err) {
+            res.send(404);
+            return;
+        }
+
+        app.exec(req, res, path);
+    });
+}
+
 exports.log_handler = function( app, req, res, match ) {
     var appname = match[1];
 
     GitApp.history(appname, function(err, results) {
-        console.log(err);
-        res.render( app.view("log"), {commits: results} );
+        res.render( app.view("log"), {name: appname, commits: results} );
     });
 };
 

@@ -60,6 +60,14 @@ var apphandler = function( req, res, appdir ) {
             return;
         }
 
+        //Redirect to sign-in for unauthenticated users
+        var user = auth.isAuthenticated(req, res);
+        if ( !user && !app.metadata.public) {
+            util.log( "redirect: " + '/app/auth' );
+            res.redirect('/app/auth');
+            return;
+        }
+
         app.exec(req, res, apppath);
     });
 };

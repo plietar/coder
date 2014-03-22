@@ -1,6 +1,8 @@
 var fs = require('fs');
 var util = require('util');
 var async = require('async');
+var pathutil = require('path');
+var ncp = require('ncp');
 
 var getDateString = function( d ) {
     var now = new Date();
@@ -52,13 +54,6 @@ App.prototype.exec = function (req, res, path) {
     res.locals["coder_color"] = coderlib.device.color;
 
 
-    //Redirect to sign-in for unauthenticated users
-    var user = coderlib.auth.isAuthenticated(req, res);
-    if ( !user && !this.metadata.public) {
-        util.log( "redirect: " + '/app/auth' );
-        res.redirect('/app/auth');
-        return;
-    }
 
     this.require(function(err, userapp) {
         if (err) {
@@ -73,8 +68,8 @@ App.prototype.exec = function (req, res, path) {
             routes = userapp.post_routes;
         }
 
+        var found = false;
         if ( routes ) {
-            var found = false;
             for ( var i in routes ) {
                 route = routes[i];
                 if ( route['path'] instanceof RegExp ) {
@@ -91,10 +86,10 @@ App.prototype.exec = function (req, res, path) {
                     break;
                 }
             }
+        }
 
-            if ( !found ) {
-                res.send(404);
-            }
+        if ( !found ) {
+            res.send(404);
         }
     });
 }
@@ -136,8 +131,7 @@ LocalApp.prototype.require = function(callback) {
 };
 
 LocalApp.prototype.view = function(name) {
-    if (!name)
-        name = "index";
+    name = name || "index";
     return this.viewpath + name;
 };
 
@@ -243,7 +237,7 @@ var createLinks = function(name, cb) {
 
 LocalApp.create = function(template, name, callback) {
     var appPath = process.cwd() + "/apps/" + name;
-    var templatePath = path.resolve("apps/", template);
+    var templatePath = pathutil.resolve("apps/", template);
 
     ncp(templatePath, appPath, function(err) {
         if (err) {

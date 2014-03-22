@@ -1,7 +1,9 @@
 "use strict";
 var async = require("async");
 var util = require("util");
+var pathutil = require("path");
 var Git = require("./git");
+
 var App = coderlib.App;
 var LocalApp = coderlib.LocalApp;
 
@@ -13,6 +15,9 @@ var GitApp = module.exports = function(name, rev) {
     this.repo = null;
     this.tree = null;
     this.module = null;
+
+    this.staticURL = pathutil.resolve('/app/vcs/static/', this.name, this.revision);
+    this.appURL = pathutil.resolve('/app/vcs/app/', this.name, this.revision);
 };
 
 util.inherits(GitApp, App);
@@ -57,12 +62,17 @@ GitApp.prototype.require = function(callback) {
             var m = new Module();
             m.paths = module.paths;
             m._compile(src, "/app/index.js");
-            self.module = m;
+            self.module = m.exports;
 
-            callback(null, m);
+            callback(null, self.module);
         }
     ], callback);
 };
+
+GitApp.prototype.view = function(name) {
+    name = name || "index";
+    return "apps/" + this.name + "/" + name;
+}
 
 GitApp.find = function(name, rev, callback) {
     callback = callback || function() {};
