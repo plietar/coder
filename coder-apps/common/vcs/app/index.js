@@ -12,7 +12,8 @@ var isVersionned = function(app, callback) {
 
 exports.get_routes = [
     { path:'/', handler:'index_handler' },
-    { path:/^\/view\/(\w+)\/([0-9a-f]+)\/static\/(.+)$/, handler: 'static_handler' }
+    { path:/^\/view\/(\w+)\/([0-9a-f]+)\/static\/(.+)$/, handler: 'static_handler' },
+    { path:/^\/log\/(\w+)\/?$/, handler:'log_handler' }
 ];
 
 exports.post_routes = [
@@ -54,6 +55,16 @@ exports.static_handler = function( app, req, res, match ) {
         }
     });
 };
+
+exports.log_handler = function( app, req, res, match ) {
+    var appname = match[1];
+
+    GitApp.history(appname, function(err, results) {
+        console.log(err);
+        res.render( app.view("log"), {commits: results} );
+    });
+};
+
 
 exports.on_destroy = function() {
 };

@@ -5,7 +5,7 @@ var Git = require("./git");
 var App = coderlib.App;
 var LocalApp = coderlib.LocalApp;
 
-var GitApp = exports = function(name, rev) {
+var GitApp = module.exports = function(name, rev) {
     GitApp.super_.call(this, name);
 
     this.revision = rev;
@@ -97,19 +97,26 @@ GitApp.history = function(name, callback) {
 
             (function loadRev(rev) {
                 repo.parseCommit(rev, function(err, commit) {
-                    if (err)
+                    if (err) {
                         callback(err);
-                    else {
-                        commits.push(commit);
-                        if (commit.parents.length == 0)
-                            callback(null, commits);
-                        else
-                            loadRev(commit.parents[0]);
+                        return;
                     }
+                    repo.rev_parse(["--short", rev], function(err, short_rev) {
+                        commit.revision = rev;
+                        commit.short = short_rev;
+                        if (err)
+                            callback(err);
+                        else {
+                            commits.push(commit);
+                            if (commit.parents.length == 0)
+                                callback(null, commits);
+                            else
+                                loadRev(commit.parents[0]);
+                        }
+                    });
                 });
             })(revision);
         }
     ], callback);
 };
-
 
