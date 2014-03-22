@@ -2,6 +2,7 @@ var pathutil = require('path');
 var fs = require('fs');
 var async = require('async');
 var Git = require('./git');
+var GitApp = require('./gitapp');
 var mime = require('mime');
 
 var isVersionned = function(app, callback) {
