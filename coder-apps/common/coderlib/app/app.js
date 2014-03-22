@@ -32,6 +32,15 @@ var App = exports.App = function(name) {
     };
 }
 
+App.prototype._load = function(data) {
+    var data = JSON.parse(data);
+    for (attr in this.metadata) {
+
+        if (typeof data[attr] !== 'undefined') {
+            this.metadata[attr] = data[attr];
+        }
+    }
+}
 
 var LocalApp = exports.LocalApp = function(name) {
     LocalApp.super_.call(this, name);
@@ -46,7 +55,7 @@ var LocalApp = exports.LocalApp = function(name) {
 }
 
 util.inherits(LocalApp, App);
-LocalApp.appcache = {}
+LocalApp.appcache = Object.create(null);
 LocalApp.appdir = process.cwd() + "/apps/";
 
 LocalApp.prototype.load = function(callback) {
@@ -59,13 +68,7 @@ LocalApp.prototype.load = function(callback) {
             return;
         }
 
-        var data = JSON.parse(data);
-        for (attr in self.metadata) {
-
-            if (typeof data[attr] !== 'undefined') {
-                self.metadata[attr] = data[attr];
-            }
-        }
+        self._load(data);
 
         callback(null);
     });
