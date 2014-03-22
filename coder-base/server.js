@@ -59,7 +59,6 @@ var apphandler = function( req, res, appdir ) {
             });
             return;
         }
-        userapp = app.require();
 
         res.locals["app_name"]    = appname;
         res.locals["app_url"]     = "/app/" + appname;
@@ -76,40 +75,47 @@ var apphandler = function( req, res, appdir ) {
             return;
         }
 
-        var routes = [];
-        if ( req.route.method === 'get' ) {
-            routes = userapp.get_routes;
-        } else if ( req.route.method === 'post' ) {
-            routes = userapp.post_routes;
-        }
+        app.require(function(err, userapp) {
+            if (err) {
+                res.send(500);
+                return;
+            }
 
-        if ( routes ) {
-            var found = false;
-            for ( var i in routes ) {
-                route = routes[i];
-                if ( route['path'] instanceof RegExp ) {
-                    var m = route['path'].exec( apppath );
-                    if ( m ) {
-                        userapp[route['handler']]( app, req, res, m );
+            var routes = [];
+            if ( req.route.method === 'get' ) {
+                routes = userapp.get_routes;
+            } else if ( req.route.method === 'post' ) {
+                routes = userapp.post_routes;
+            }
+
+            if ( routes ) {
+                var found = false;
+                for ( var i in routes ) {
+                    route = routes[i];
+                    if ( route['path'] instanceof RegExp ) {
+                        var m = route['path'].exec( apppath );
+                        if ( m ) {
+                            userapp[route['handler']]( app, req, res, m );
+                            found = true;
+                            break;
+                        }
+
+                    } else if ( route['path'] === apppath ) {
+                        userapp[route['handler']]( app, req, res );
                         found = true;
                         break;
                     }
 
-                } else if ( route['path'] === apppath ) {
-                    userapp[route['handler']]( app, req, res );
-                    found = true;
-                    break;
                 }
 
+                if ( !found ) {
+                    res.status( 404 );
+                    res.render('404', {
+                        title: 'error'
+                    });
+                }
             }
-
-            if ( !found ) {
-                res.status( 404 );
-                res.render('404', {
-                    title: 'error'
-                });
-            }
-        }
+        });
     });
 };
 

@@ -74,8 +74,8 @@ LocalApp.prototype.load = function(callback) {
     });
 };
 
-LocalApp.prototype.require = function() {
-    return require(this.loadpath);
+LocalApp.prototype.require = function(callback) {
+    callback(null, require(this.loadpath));
 };
 
 LocalApp.prototype.view = function(name) {
