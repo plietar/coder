@@ -1,15 +1,7 @@
-
-exports.listenIP = '127.0.0.1'; //Defaults to *
-exports.httpListenPort = 8080; //this will all be redirected to SSL
-//exports.httpsListenPort = 8081; //the SSL port things run on
-
-//exports.httpsVisiblePort = 443; //forwarded https port the user sees, used to redirect from http to https
+exports.listenIP = '127.0.0.1';
+exports.httpListenPort = 8080;
 
 exports.cacheApps = true;
-
-//SSL Info
-exports.ssl = {}
-exports.ssl.enable = false
 
 //Experimental
 //

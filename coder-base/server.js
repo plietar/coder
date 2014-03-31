@@ -23,7 +23,6 @@ var express = require('express');
 var socketio = require('socket.io');
 var net = require('http');
 var http = require('http');
-var https = require('https');
 var crypto = require('crypto');
 var path = require('path');
 var fs = require('fs');
@@ -135,53 +134,6 @@ var apphandler = function( req, res, appdir ) {
                 title: 'error'
             });
         }
-    }
-};
-
-
-var loadSslCert = function(callback) {
-    privateKeyFile=path.normalize('certs/server.key');
-    certificateFile=path.normalize('certs/server.cert');
-
-    var privateKey="";
-    var certificate="";
-    try {
-        privateKey = fs.readFileSync(privateKeyFile).toString();
-        certificate = fs.readFileSync(certificateFile).toString();
-    } catch ( e ) {
-        util.print( "no certificate found. generating self signed cert.\n" );
-    }
-
-    if ( privateKey !== "" && certificate !== "" ) {
-        callback(privateKey, certificate);
-    } else {
-        var spawn = require('child_process').spawn;
-
-        var genSelfSignedCert = function(keyFile, certFile) {
-            var genkey = spawn( 'openssl', [
-                'req', '-x509', '-nodes',
-                '-days', '365',
-                '-newkey', 'rsa:2048',
-                '-keyout', keyFile,
-                '-out', certFile,
-                '-subj',
-                '/C=' + config.country + '/ST=' + config.state + "/L=" + config.locale + "/CN=" + config.commonName + "/subjectAltName=" + config.subjectAltName
-            ]);
-            genkey.stdout.on('data', function(d) { util.print(d) } );
-            genkey.stderr.on('data', function(d) { util.print(d) } );
-            genkey.addListener( 'exit', function( code, signal ) {
-                fs.chmodSync(privateKeyFile, '600');
-                loadServer();
-            });
-        };        
-        var loadServer = function() {
-            privateKey = fs.readFileSync(privateKeyFile).toString();
-            certificate = fs.readFileSync(certificateFile).toString();
-
-            callback(privateKey, certificate);
-        };
-
-        genSelfSignedCert(privateKeyFile, certificateFile);
     }
 };
 
@@ -378,31 +330,10 @@ coderapp.all( /^\/app\/(\w+)\/(.*)$/, function( req, res ) { apphandler( req, re
 coderapp.all( /^\/app\/(\w+)\/$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
 coderapp.all( /^\/app\/(\w+)$/, function( req, res ) { apphandler( req, res,  __dirname + '/apps/'); } );
 
-if (config.ssl.enable)
-{
-    //HTTP is all redirected to HTTPS
-    var redirectapp = express();
-    params.extend( redirectapp );
-    redirectapp.engine( 'html', cons.mustache );
-    redirectapp.all( /.*/, function( req, res ) {
-        util.log( 'redirect: ' + getHost(req) + ":" + config.httpsVisiblePort + " " + req.url );
-        res.redirect("https://" + getHost(req) + ":" + config.httpsVisiblePort  + req.url);
-    });
 
-    http.createServer(redirectapp).listen(config.httpListenPort, config.listenIP);
-
-    loadSslCert(function (key, cert) {
-        var server = https.createServer({ key: key, cert: cert }, coderapp);
-        server.listen(config.httpsListenPort, config.listenIP);
-        initSocketIO(server);
-    });
-}
-else
-{
-    var server = http.createServer(coderapp);
-    server.listen(config.httpListenPort, config.listenIP);
-    initSocketIO(server);
-}
+var server = http.createServer(coderapp);
+server.listen(config.httpListenPort, config.listenIP);
+initSocketIO(server);
 
 pingStatusServer();
 
