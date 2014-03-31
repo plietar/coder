@@ -4,20 +4,18 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "express": "3.1.0",
-        "redis": "0.8.2",
-        "mustache": "0.7.2",
-        "consolidate": "0.8.0",
-        "socket.io": "0.9.13",
-        "express-params": "0.0.3",
-        "bcrypt": "0.7.4",
-        "connect": "*",
-        "cookie": "*",
-        "async": "0.2.*",
-        "ncp": "0.5.*",
-        "tmp": "0.0.23",
-        "rimraf": "~2.2.6",
-        "byline": "~4.1.1",
-        "mime": "~1.2.11"
+        "express": "~3.5",
+        "mustache": "~0.8",
+        "consolidate": "~0.10",
+        "socket.io": "~0.9",
+        "bcrypt": "~0.7",
+        "connect": "~2.14",
+        "cookie": "~0.1",
+        "async": "~0.2",
+        "ncp": "~0.5",
+        "tmp": "~0.0.23",
+        "rimraf": "~2.2",
+        "byline": "~4.1",
+        "mime": "~1.2"
     }
 }

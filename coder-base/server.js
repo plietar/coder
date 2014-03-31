@@ -29,7 +29,6 @@ var path = require('path');
 var fs = require('fs');
 var util = require('util');
 var cons = require('consolidate');
-var params = require('express-params');
 var querystring = require('querystring');
 var cookie = require('cookie');
 var connect = require('connect');
@@ -296,7 +295,6 @@ var getHost = function( req ) {
 };
 
 var coderapp = express();
-params.extend( coderapp );
 coderapp.engine( 'html', cons.mustache );
 coderapp.set( 'view engine', 'html' );
 coderapp.set( 'views', __dirname + '/views' );
