@@ -14,6 +14,7 @@
         "bcrypt": "~0.7",
         "connect": "~3.0",
         "cookie": "~0.1",
-        "systemd": "git+https://github.com/plietar/node-systemd.git"
+        "systemd": "git+https://github.com/plietar/node-systemd.git",
+        "autoquit": "~0.1.6"
     }
 }

@@ -5,6 +5,11 @@
 // - "systemd" for socket activation
 exports.listen = [8080, '127.0.0.1'];
 
+// Automatically stop the server if idle for a long amount of time.
+// Designed to be used in conjunction with listen = "systemd".
+// Disabled if timeout is 0
+exports.idleTimeout = 0;
+
 exports.cacheApps = true;
 
 //Experimental

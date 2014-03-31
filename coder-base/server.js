@@ -35,6 +35,7 @@ var session = require('express-session');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var systemd = require('systemd')
+require('autoquit');
 
 global.config = require('./config');
 global.coderlib = require('./apps/coderlib/app');
@@ -334,6 +335,9 @@ coderapp.all( /^\/app\/(\w+)$/, function( req, res ) { apphandler( req, res,  __
 
 
 var server = http.createServer(coderapp);
+if (config.idleTimeout) {
+    server.autoQuit({ timeOut: config.idleTimeout });
+}
 
 if (Array.isArray(config.listen))
     var listenfn = server.listen.bind(server, config.listen[0], config.listen[1]);
