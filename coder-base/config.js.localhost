@@ -1,5 +1,9 @@
-exports.listenIP = '127.0.0.1';
-exports.httpListenPort = 8080;
+// Listen can take different values :
+// - port number
+// - [port number, bind address] array
+// - unix socket path
+// - "systemd" for socket activation
+exports.listen = [8080, '127.0.0.1'];
 
 exports.cacheApps = true;
 

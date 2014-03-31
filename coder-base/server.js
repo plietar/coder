@@ -34,6 +34,7 @@ var connect = require('connect');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
+var systemd = require('systemd')
 
 global.config = require('./config');
 global.coderlib = require('./apps/coderlib/app');
@@ -234,8 +235,8 @@ var initSocketIO = function( server ) {
 // Allow front end console to receive server logs over a socket connection.
 // Note that util.log will still only go to stdout
 var origlog = console.log;
-console.log = function(d) {
-    origlog.call( console, d );
+console.log = function() {
+    origlog.apply( console, arguments );
     if ( io ) {
         io.set('log level', 1);
         var clients = io.sockets.clients();
@@ -333,12 +334,21 @@ coderapp.all( /^\/app\/(\w+)$/, function( req, res ) { apphandler( req, res,  __
 
 
 var server = http.createServer(coderapp);
-server.listen(config.httpListenPort, config.listenIP);
-initSocketIO(server);
 
-pingStatusServer();
+if (Array.isArray(config.listen))
+    var listenfn = server.listen.bind(server, config.listen[0], config.listen[1]);
+else
+    var listenfn = server.listen.bind(server, config.listen);
 
-process.on('uncaughtException', function(err) {
-    console.log('WARNING: unhandled exception: ' + err );
+listenfn(function() {
+    initSocketIO(server);
+
+    pingStatusServer();
+
+    systemd.notify();
+
+    process.on('uncaughtException', function(err) {
+        console.log('WARNING: unhandled exception: ' + err );
+    });
 });
 

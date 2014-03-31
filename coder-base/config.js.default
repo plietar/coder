@@ -1,5 +1,9 @@
-exports.listenIP = null; // All ips
-exports.listenPort = 80;
+// Listen can take different values :
+// - port number
+// - [port number, bind address] array
+// - unix socket path
+// - "systemd" for socket activation
+exports.listen = 80;
 
 exports.cacheApps = true;
 
