@@ -28,10 +28,12 @@ var path = require('path');
 var fs = require('fs');
 var util = require('util');
 var cons = require('consolidate');
-var params = require('express-params');
 var querystring = require('querystring');
 var cookie = require('cookie');
 var connect = require('connect');
+var session = require('express-session');
+var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 
 global.config = require('./config');
 global.coderlib = require('./apps/coderlib/app');
@@ -102,9 +104,9 @@ var apphandler = function( req, res, appdir ) {
     }
 
     var routes = [];
-    if ( req.route.method === 'get' ) {
+    if ( req.method === 'GET' ) {
         routes = userapp.get_routes;
-    } else if ( req.route.method === 'post' ) {
+    } else if ( req.method === 'POST' ) {
         routes = userapp.post_routes;
     }
 
@@ -138,13 +140,13 @@ var apphandler = function( req, res, appdir ) {
 };
 
 var storeSecret = crypto.randomBytes(16).toString('utf-8');
-var sessionStore = new express.session.MemoryStore();
+var sessionStore = new session.MemoryStore();
 
 var io;
 var socketMap={};
 var initSocketIO = function( server ) {
     io = socketio.listen( server );
-    var sioCookieParser = express.cookieParser(storeSecret);
+    var sioCookieParser = cookieParser(storeSecret);
 
     io.set('log level', 1); //TODO: hack to fix recursion problem since we are piping log info to a socket
 
@@ -160,7 +162,7 @@ var initSocketIO = function( server ) {
                     }
                     else {
                         handshake.sessionStore = sessionStore;
-                        handshake.session = new express.session.Session(handshake, sessionData);
+                        handshake.session = new session.Session(handshake, sessionData);
                         accept(null, true);
                     }
                 });
@@ -310,13 +312,12 @@ var getHost = function( req ) {
 };
 
 var coderapp = express();
-params.extend( coderapp );
 coderapp.engine( 'html', cons.mustache );
 coderapp.set( 'view engine', 'html' );
 coderapp.set( 'views', __dirname + '/views' );
-coderapp.use( express.bodyParser() );
-coderapp.use( express.cookieParser() );
-coderapp.use( express.session({
+coderapp.use( bodyParser() );
+coderapp.use( cookieParser() );
+coderapp.use( session({
     key: 'connect.sid',
     secret: storeSecret,
     store: sessionStore
